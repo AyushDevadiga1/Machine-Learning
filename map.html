@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine Learning Portfolio Map</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            background: linear-gradient(90deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            margin-bottom: 20px;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 15px 25px;
+            background: rgba(51, 65, 85, 0.5);
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, 0.1);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #60a5fa;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+        
+        .topic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        
+        .topic-card {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .topic-card:hover {
+            transform: translateY(-5px);
+            border-color: #60a5fa;
+            box-shadow: 0 12px 40px rgba(96, 165, 250, 0.2);
+        }
+        
+        .topic-card.active {
+            border-color: #a78bfa;
+            background: rgba(30, 41, 59, 0.9);
+        }
+        
+        .topic-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .topic-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .icon-blue { background: rgba(96, 165, 250, 0.2); color: #60a5fa; }
+        .icon-purple { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
+        .icon-green { background: rgba(52, 211, 153, 0.2); color: #34d399; }
+        .icon-red { background: rgba(248, 113, 113, 0.2); color: #f87171; }
+        .icon-yellow { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        .icon-pink { background: rgba(244, 114, 182, 0.2); color: #f472b6; }
+        .icon-cyan { background: rgba(34, 211, 238, 0.2); color: #22d3ee; }
+        
+        .topic-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+        
+        .topic-count {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-top: 5px;
+        }
+        
+        .topic-description {
+            color: #cbd5e1;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+        
+        .files-container {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease;
+        }
+        
+        .files-container.expanded {
+            max-height: 800px;
+            margin-top: 20px;
+        }
+        
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .file-item {
+            background: rgba(51, 65, 85, 0.4);
+            padding: 12px 16px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .file-item:hover {
+            background: rgba(71, 85, 105, 0.6);
+            border-color: #60a5fa;
+            transform: translateX(5px);
+        }
+        
+        .file-icon {
+            color: #60a5fa;
+            font-size: 1.1rem;
+        }
+        
+        .file-name {
+            flex: 1;
+            color: #e2e8f0;
+            font-size: 0.95rem;
+        }
+        
+        .file-type {
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            background: rgba(96, 165, 250, 0.2);
+            color: #60a5fa;
+        }
+        
+        .file-type.notebook { background: rgba(167, 139, 250, 0.2); color: #a78bfa; }
+        .file-type.dataset { background: rgba(52, 211, 153, 0.2); color: #34d399; }
+        .file-type.script { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        
+        .toggle-btn {
+            width: 100%;
+            padding: 12px;
+            background: rgba(96, 165, 250, 0.1);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            color: #60a5fa;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+        
+        .toggle-btn:hover {
+            background: rgba(96, 165, 250, 0.2);
+        }
+        
+        .connections {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 16px;
+            padding: 30px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            margin-top: 40px;
+        }
+        
+        .connections h2 {
+            color: #f8fafc;
+            margin-bottom: 20px;
+            font-size: 1.6rem;
+        }
+        
+        .connection-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .connection-item {
+            background: rgba(51, 65, 85, 0.4);
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #60a5fa;
+        }
+        
+        .connection-title {
+            color: #60a5fa;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 30px;
+            color: #94a3b8;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        
+        .github-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(96, 165, 250, 0.1);
+            color: #60a5fa;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            margin-top: 15px;
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            transition: all 0.2s ease;
+        }
+        
+        .github-link:hover {
+            background: rgba(96, 165, 250, 0.2);
+            transform: translateY(-2px);
+        }
+        
+        @media (max-width: 768px) {
+            .topic-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .stats {
+                gap: 15px;
+            }
+            
+            .stat-item {
+                padding: 12px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Machine Learning Portfolio Map</h1>
+            <div class="subtitle">Interactive navigation of 147 ML files - Click any file to open directly</div>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-number">76</span>
+                    <span class="stat-label">Jupyter Notebooks</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">70+</span>
+                    <span class="stat-label">Datasets</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">15</span>
+                    <span class="stat-label">ML Categories</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">367</span>
+                    <span class="stat-label">Commits</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="topic-grid">
+            <!-- Data Preprocessing -->
+            <div class="topic-card" onclick="toggleTopic('data-preprocessing')">
+                <div class="topic-header">
+                    <div class="topic-icon icon-blue">🧹</div>
+                    <div>
+                        <div class="topic-title">Data Preprocessing</div>
+                        <div class="topic-count">12 files</div>
+                    </div>
+                </div>
+                <div class="topic-description">Data cleaning, feature engineering, handling missing values, and outlier detection.</div>
+                <div id="data-preprocessing" class="files-container">
+                    <div class="file-list">
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/DataCleaningMessyDatasets.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">DataCleaningMessyDatasets.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/FeatureEngineeringOnDataset.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">FeatureEngineeringOnDataset.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/ImputingMethodsOnMissingValues.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">ImputingMethodsOnMissingValues.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/OutlierAnalysisOnDatasets.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">OutlierAnalysisOnDatasets.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/FifaDatasetCleaning.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">FifaDatasetCleaning.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Regression Models -->
+            <div class="topic-card" onclick="toggleTopic('regression')">
+                <div class="topic-header">
+                    <div class="topic-icon icon-purple">📈</div>
+                    <div>
+                        <div class="topic-title">Regression Models</div>
+                        <div class="topic-count">15 files</div>
+                    </div>
+                </div>
+                <div class="topic-description">Linear, polynomial, ridge, lasso regression with from-scratch implementations.</div>
+                <div id="regression" class="files-container">
+                    <div class="file-list">
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/LinearRegressionfromScratch.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">LinearRegressionfromScratch.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/MultipleLinearRegressionOnHousing.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">MultipleLinearRegressionOnHousing.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/RidgeRegressionFromScratch.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">RidgeRegressionFromScratch.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/LassoRegression.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">LassoRegression.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/PolynomialRegression.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">PolynomialRegression.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Classification Models -->
+            <div class="topic-card" onclick="toggleTopic('classification')">
+                <div class="topic-header">
+                    <div class="topic-icon icon-green">🎯</div>
+                    <div>
+                        <div class="topic-title">Classification Models</div>
+                        <div class="topic-count">14 files</div>
+                    </div>
+                </div>
+                <div class="topic-description">Logistic regression, decision trees, KNN, SVM, Naive Bayes with evaluation.</div>
+                <div id="classification" class="files-container">
+                    <div class="file-list">
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/LogisticRegressionfBreastCancer.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">LogisticRegressionfBreastCancer.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/DecisionTreeClassifier.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">DecisionTreeClassifier.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/KNNClassficationFromScratch.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">KNNClassficationFromScratch.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/SupportVectorMachine.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">SupportVectorMachine.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/ClassificationMetrics.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">ClassificationMetrics.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Ensemble Methods -->
+            <div class="topic-card" onclick="toggleTopic('ensemble')">
+                <div class="topic-header">
+                    <div class="topic-icon icon-yellow">🌳</div>
+                    <div>
+                        <div class="topic-title">Ensemble Methods</div>
+                        <div class="topic-count">9 files</div>
+                    </div>
+                </div>
+                <div class="topic-description">Random forests, gradient boosting, AdaBoost, and voting ensembles.</div>
+                <div id="ensemble" class="files-container">
+                    <div class="file-list">
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/RandomForestClassifier.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">RandomForestClassifier.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/GradientBoostClassifier.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">GradientBoostClassifier.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/AdaBoostClassifier.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">AdaBoostClassifier.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/VotingEnsemble.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">VotingEnsemble.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/BaggingEnsembleTechnique.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">BaggingEnsembleTechnique.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- From-Scratch Implementations -->
+            <div class="topic-card" onclick="toggleTopic('scratch')">
+                <div class="topic-header">
+                    <div class="topic-icon icon-red">⚙️</div>
+                    <div>
+                        <div class="topic-title">From-Scratch Implementations</div>
+                        <div class="topic-count">6 files</div>
+                    </div>
+                </div>
+                <div class="topic-description">Core algorithms implemented from first principles.</div>
+                <div id="scratch" class="files-container">
+                    <div class="file-list">
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/PerceptronFromScratch.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">PerceptronFromScratch.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/GradientDescentFromScratch.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">GradientDescentFromScratch.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/KNNClassficationFromScratch.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">KNNClassficationFromScratch.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/MultipleLinearRegressionFromScratch.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">MultipleLinearRegressionFromScratch.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/RidgeRegressionFromScratch.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">RidgeRegressionFromScratch.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Unsupervised Learning -->
+            <div class="topic-card" onclick="toggleTopic('unsupervised')">
+                <div class="topic-header">
+                    <div class="topic-icon icon-pink">🔍</div>
+                    <div>
+                        <div class="topic-title">Unsupervised Learning</div>
+                        <div class="topic-count">5 files</div>
+                    </div>
+                </div>
+                <div class="topic-description">Clustering algorithms and dimensionality reduction.</div>
+                <div id="unsupervised" class="files-container">
+                    <div class="file-list">
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/KMeansClusteringOnIris.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">KMeansClusteringOnIris.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/DBSCANAlgorithmOnBlobs.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">DBSCANAlgorithmOnBlobs.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/AgglomerativeClustering.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">AgglomerativeClustering.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/dbscan_animation.py" class="file-item" target="_blank">
+                            <div class="file-icon">🐍</div>
+                            <div class="file-name">dbscan_animation.py</div>
+                            <div class="file-type script">Script</div>
+                        </a>
+                        <a href="https://github.com/AyushDevadiga1/Machine-Learning/blob/main/NearestNeighbors.ipynb" class="file-item" target="_blank">
+                            <div class="file-icon">📓</div>
+                            <div class="file-name">NearestNeighbors.ipynb</div>
+                            <div class="file-type notebook">Notebook</div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="connections">
+            <h2>Learning Pathways & Connections</h2>
+            <div class="connection-grid">
+                <div class="connection-item">
+                    <div class="connection-title">Foundation → Application</div>
+                    <div>Start with Data Preprocessing → Apply Regression/Classification → Evaluate with Metrics → Scale with Ensembles</div>
+                </div>
+                <div class="connection-item">
+                    <div class="connection-title">Algorithm Progression</div>
+                    <div>Linear Models → Regularization → Tree Methods → Ensemble Methods → From-Scratch Understanding</div>
+                </div>
+                <div class="connection-item">
+                    <div class="connection-title">Domain Applications</div>
+                    <div>Healthcare (Classification) → Real Estate (Regression) → Sports (Data Cleaning) → Entertainment (EDA)</div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Machine Learning Portfolio | 147 files organized into 7 core topics</p>
+            <p style="margin-top: 10px; font-size: 0.9rem; color: #64748b;">
+                Click on any topic card to explore related files, then click any file to open it on GitHub
+            </p>
+            <a href="https://github.com/AyushDevadiga1/Machine-Learning" class="github-link" target="_blank">
+                View Full Repository on GitHub
+            </a>
+        </footer>
+    </div>
+
+    <script>
+        // Track expanded topics
+        let expandedTopics = new Set();
+        
+        function toggleTopic(topicId) {
+            const container = document.getElementById(topicId);
+            const card = container.parentElement;
+            
+            if (expandedTopics.has(topicId)) {
+                // Collapse
+                container.classList.remove('expanded');
+                card.classList.remove('active');
+                expandedTopics.delete(topicId);
+            } else {
+                // Expand
+                container.classList.add('expanded');
+                card.classList.add('active');
+                expandedTopics.add(topicId);
+            }
+        }
+        
+        // Initialize with first topic expanded
+        document.addEventListener('DOMContentLoaded', () => {
+            toggleTopic('data-preprocessing');
+            
+            // Add click handlers to prevent card clicks from interfering with file clicks
+            document.querySelectorAll('.file-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent card toggle when clicking files
+                });
+            });
+        });
+    </script>
+</body>
+</html>
