@@ -1,7 +1,7 @@
 # Machine Learning Portfolio - Interactive Navigation
 
 ## 🗺️ Interactive Map
-Explore the repository through this interactive map: **[Open Interactive Map](https://ayushdevadiga1.github.io/Machine-Learning/map.html)**
+Explore the repository through this interactive map: **[Open Interactive Map](https://ayushdevadiga1.github.io/Machine-Learning/blob/main/map.html)**
 
 ## 📁 Direct File Navigation
 
