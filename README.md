@@ -41,15 +41,18 @@ A significant portion of the repository is dedicated to the most critical part o
 *   **Machine Learning**: `Scikit-Learn`, `XGBoost`, `LightGBM`
 *   **Data Collection**: `Requests`, `BeautifulSoup4`
 
-### Repository Organization
-```text
-├── Notebooks/          # Core algorithmic implementations and EDA
-├── Datasets/           # Raw and cleaned CSV/JSON data sources
-│   ├── Cleaned/        # Processed data ready for modeling
-│   └── Raw/            # Original messy datasets for cleaning practice
-├── Models/             # Serialized (.pkl/.joblib) trained models
-└── Documentation/      # In-depth analysis and import logs
-```
+## Repository Content & Structure
+
+This repository is maintained as a dynamic, flat collection of resources to provide immediate access to individual experiments and datasets.
+
+### File Definitions
+*   **Jupyter Notebooks (.ipynb)**: Each notebook is a self-contained environment containing an algorithm implementation, data analysis, or preprocessing pipeline.
+*   **Datasets (.csv, .json, .tsv)**: Raw and partially processed data files used across the various notebooks.
+*   **Python Scripts (.py)**: Utility scripts for specialized tasks like animations or data fetching.
+*   **Documentation**: Supplemental guides like `IMPORTS.md` and `requirements.txt` for environment management.
+
+> [!NOTE]
+> The repository is currently organized in a flat structure to facilitate rapid iterative learning and quick navigation between interrelated notebooks and datasets.
 
 ## Setup & Execution
 
