@@ -1,4 +1,4 @@
-def column_cardinalitity_analysis(df,threshold=5):
+def column_cardinality_analysis(df,threshold=5):
 
     print(f'Threshold : {threshold}\n')
 
@@ -22,3 +22,4 @@ def column_cardinalitity_analysis(df,threshold=5):
 
     print(f'List of columns Having rare values : {rare_columns} ')
     
+    return rare_columns
