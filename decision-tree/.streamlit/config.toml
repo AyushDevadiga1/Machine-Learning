@@ -1,7 +1,16 @@
 [theme]
-base                     = "light"
-primaryColor             = "#CC785C"
-backgroundColor          = "#F5F0E8"
-secondaryBackgroundColor = "#FDFAF5"
-textColor                = "#1A1A1A"
-font                     = "sans serif"
+# Google "Cloud" Neutral Palette
+primaryColor = "#1A73E8"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F8F9FA"
+textColor = "#202124"
+font = "sans serif"
+
+[client]
+# Improves the clean "App" feel by removing the top padding/ribbon
+showErrorDetails = false
+toolbarMode = "minimal"
+
+[browser]
+# Removes the "Made with Streamlit" footer for a professional look
+gatherUsageStats = false
