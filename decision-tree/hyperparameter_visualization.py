@@ -48,29 +48,11 @@ st.set_page_config(
 
 
 # ─────────────────────────────────────────────────────────────
-#  CSS  —  inject variables + stylesheet in one block
+#  CSS  —  load stylesheet only; toml owns all colours
 # ─────────────────────────────────────────────────────────────
-THEME = {
-    "--ink":        "#0C0C0E",
-    "--surface":    "#141418",
-    "--surface-2":  "#1C1C22",
-    "--border":     "#2A2A32",
-    "--text":       "#E8E6E1",
-    "--text-muted": "#7A7880",
-    "--amber":      "#E8A838",
-    "--amber-dim":  "#3D2E0A",
-    "--red":        "#E05252",
-    "--red-dim":    "#2E0E0E",
-    "--green":      "#52B788",
-    "--green-dim":  "#0A2318",
-    "--blue":       "#5B9BD5",
-    "--blue-dim":   "#0D1E2E",
-}
-
 def _load_css() -> None:
     css = (Path(__file__).parent / "assets" / "style.css").read_text()
-    root = ":root{\n" + "\n".join(f"  {k}:{v};" for k, v in THEME.items()) + "\n}"
-    st.markdown(f"<style>{root}\n{css}</style>", unsafe_allow_html=True)
+    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
 
 _load_css()
 
@@ -245,17 +227,36 @@ def chart_tree(clf, fn, max_show):
         sp.set_visible(False)
     ax.set_xticks([])
     ax.set_yticks([])
-    plot_tree(
-        clf, feature_names=fn,
-        class_names=["Class 0", "Class 1"],
-        filled=True, rounded=True,
-        impurity=True, proportion=False,
-        max_depth=max_show, ax=ax,
-        fontsize=8, precision=3,
-    )
+
+    # Use monospace font for the tree node labels so
+    # conditions like "x1 <= 0.432" are easy to scan
+    with plt.rc_context({"font.family": "monospace", "font.size": 8, "text.color": "#000000"}):
+        plot_tree(
+            clf, feature_names=fn,
+            class_names=["Class 0", "Class 1"],
+            filled=True, rounded=True,
+            impurity=True, proportion=False,
+            max_depth=max_show, ax=ax,
+            fontsize=8, precision=3,
+        )
+
+    # After plot_tree renders, walk every artist and make
+    # arrows (FancyArrowPatch) and edge labels (Text) white.
+    for artist in ax.get_children():
+        # Arrow lines between nodes
+        if hasattr(artist, "set_color") and hasattr(artist, "get_arrowstyle"):
+            artist.set_color("#FFFFFF")
+        # True / False text labels on edges
+        if isinstance(artist, plt.Text):
+            txt = artist.get_text().strip()
+            if txt in ("True", "False"):
+                artist.set_color("#FFFFFF")
+                artist.set_fontweight("bold")
+
     suffix = (f"  ·  {depth + 1} of {clf.get_depth() + 1} levels shown"
               if clf.get_depth() > max_show else "")
-    ax.set_title(f"Tree structure{suffix}", color=TEXT)
+    ax.set_title(f"Tree structure{suffix}", color=TEXT,
+                 fontfamily="sans-serif", fontsize=10, fontweight="semibold")
     fig.tight_layout()
     return fig
 

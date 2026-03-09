@@ -1,0 +1,95 @@
+/*
+ * style.css — minimal structural rules only.
+ * config.toml owns every colour.
+ * No colour values here except the one sidebar wildcard
+ * that is known to fix Streamlit's text bleed-through.
+ */
+
+/* ── Hide chrome ── */
+#MainMenu { visibility: hidden; }
+footer    { visibility: hidden; }
+
+/* ── Layout ── */
+.block-container {
+    padding-top:    1.8rem  !important;
+    padding-bottom: 4rem    !important;
+    max-width:      1360px  !important;
+}
+
+/* ── Sidebar ──
+   Only two rules needed.
+   The wildcard colour line is the one fix that
+   actually prevents Streamlit's invisible-text bug.
+   Do NOT hide the header element — it contains the
+   sidebar toggle button.
+*/
+[data-testid="stSidebar"] {
+    border-right: 1px solid rgba(128,128,128,0.2);
+}
+
+[data-testid="stSidebar"] * {
+    color: inherit !important;
+}
+
+/* ── Metric cards ── */
+[data-testid="stMetric"] {
+    border:        1px solid rgba(128,128,128,0.2);
+    border-radius: 8px;
+    padding:       14px 16px 10px 16px;
+}
+
+[data-testid="stMetricLabel"] > div {
+    font-size:      0.68rem   !important;
+    font-weight:    600       !important;
+    letter-spacing: 0.08em    !important;
+    text-transform: uppercase !important;
+}
+
+[data-testid="stMetricValue"] > div {
+    font-size:      1.45rem !important;
+    font-weight:    700     !important;
+    letter-spacing: -0.02em !important;
+}
+
+/* ── Tabs ── */
+[data-baseweb="tab-list"] {
+    gap:           0          !important;
+    background:    transparent !important;
+}
+
+button[data-baseweb="tab"] {
+    background:    transparent                  !important;
+    border-radius: 0                            !important;
+    border-bottom: 2px solid transparent        !important;
+    padding:       0.55rem 1.1rem               !important;
+    font-size:     0.83rem                      !important;
+    font-weight:   400                          !important;
+    margin-bottom: -1px                         !important;
+}
+
+button[data-baseweb="tab"][aria-selected="true"] {
+    font-weight:   600  !important;
+}
+
+/* ── Buttons ── */
+.stButton > button {
+    font-size:     0.8rem !important;
+    font-weight:   500    !important;
+    border-radius: 5px    !important;
+    padding:       0.35rem 0.8rem !important;
+}
+
+/* ── Divider ── */
+hr {
+    margin: 0.6rem 0 !important;
+}
+
+/* ── Expander ── */
+[data-testid="stExpander"] {
+    border-radius: 7px !important;
+}
+
+/* ── Captions ── */
+[data-testid="stCaptionContainer"] p {
+    font-size: 0.76rem !important;
+}
