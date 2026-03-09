@@ -1,0 +1,59 @@
+/* assets/style.css */
+
+:root {
+    /* These will be overwritten by the Python load_css function */
+    --bg-main: #ffffff;
+    --bg-sidebar: #f8f9fa;
+    --text-main: #202124;
+    --text-muted: #5f6368;
+    --border-color: #dadce0;
+    --accent: #1a73e8;
+}
+
+/* Base Container */
+.block-container {
+    padding-top: 1.5rem !important;
+    max-width: 1350px !important;
+    background-color: var(--bg-main);
+}
+
+/* Sidebar Fix: Guaranteed Visibility */
+[data-testid="stSidebar"] {
+    background-color: var(--bg-sidebar) !important;
+    border-right: 1px solid var(--border-color) !important;
+}
+
+/* Force ALL sidebar elements to respect the theme text color */
+[data-testid="stSidebar"] * {
+    color: var(--text-main) !important;
+}
+
+/* Metric Cards: Google Material Style */
+[data-testid="stMetric"] {
+    background-color: var(--bg-main) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 12px !important;
+    padding: 15px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+}
+
+[data-testid="stMetricValue"] > div {
+    color: var(--accent) !important;
+    font-weight: 700 !important;
+}
+
+/* Tabs: Minimalist Google Style */
+button[data-baseweb="tab"] {
+    border-bottom: 2px solid transparent !important;
+    color: var(--text-muted) !important;
+}
+
+button[data-baseweb="tab"][aria-selected="true"] {
+    border-bottom: 2px solid var(--accent) !important;
+    color: var(--accent) !important;
+    background-color: transparent !important;
+}
+
+/* Clean UI */
+#MainMenu, footer { visibility: hidden; }
+header { background-color: transparent !important; }
