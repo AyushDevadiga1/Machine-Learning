@@ -1,7 +1,7 @@
 """
-Decision Tree Hyperparameter Explorer
---------------------------------------
-Folder layout:
+Decision Tree Explorer  —  Dark Editorial Edition
+===================================================
+Structure:
     app.py
     requirements.txt
     assets/style.css
@@ -20,11 +20,12 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import matplotlib.ticker as mticker
 import streamlit as st
 
 from matplotlib.colors import ListedColormap
 from sklearn.datasets import (
-    make_moons, make_circles, make_classification, load_breast_cancer
+    make_moons, make_circles, make_classification, load_breast_cancer,
 )
 from sklearn.inspection import DecisionBoundaryDisplay
 from sklearn.metrics import (
@@ -35,101 +36,108 @@ from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier, export_text, plot_tree
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# PAGE CONFIG  (must be the very first Streamlit call)
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+#  PAGE CONFIG
+# ─────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Decision Tree Explorer",
-    page_icon="🌳",
+    page_icon="⬡",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ── Theme tokens ─────────────────────────────────────────────
-# Change values here to retheme the entire app.
-# These are injected into CSS :root, so style.css never needs editing.
+
+# ─────────────────────────────────────────────────────────────
+#  CSS  —  inject variables + stylesheet in one block
+# ─────────────────────────────────────────────────────────────
 THEME = {
-    "--bg-main":      "#ffffff",
-    "--bg-sidebar":   "#f8f9fa",
-    "--text-main":    "#202124",
-    "--text-muted":   "#5f6368",
-    "--border":       "#dadce0",
-    "--accent":       "#1a73e8",
-    "--accent-light": "#e8f0fe",
+    "--ink":        "#0C0C0E",
+    "--surface":    "#141418",
+    "--surface-2":  "#1C1C22",
+    "--border":     "#2A2A32",
+    "--text":       "#E8E6E1",
+    "--text-muted": "#7A7880",
+    "--amber":      "#E8A838",
+    "--amber-dim":  "#3D2E0A",
+    "--red":        "#E05252",
+    "--red-dim":    "#2E0E0E",
+    "--green":      "#52B788",
+    "--green-dim":  "#0A2318",
+    "--blue":       "#5B9BD5",
+    "--blue-dim":   "#0D1E2E",
 }
 
 def _load_css() -> None:
-    css_path = Path(__file__).parent / "assets" / "style.css"
-    css = css_path.read_text()
-    # Inject theme variables into :root
-    vars_block = ":root {\n" + "\n".join(
-        f"    {k}: {v};" for k, v in THEME.items()
-    ) + "\n}"
-    st.markdown(f"<style>{vars_block}\n{css}</style>", unsafe_allow_html=True)
+    css = (Path(__file__).parent / "assets" / "style.css").read_text()
+    root = ":root{\n" + "\n".join(f"  {k}:{v};" for k, v in THEME.items()) + "\n}"
+    st.markdown(f"<style>{root}\n{css}</style>", unsafe_allow_html=True)
 
 _load_css()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# CHART STYLE  (set once, inherited by every figure)
-# ─────────────────────────────────────────────────────────────────────────────
-BLUE  = "#2563EB"
-RED   = "#DC2626"
-GRAY  = "#6B7280"
-LGRAY = "#E5E7EB"
+# ─────────────────────────────────────────────────────────────
+#  CHART PALETTE  (matches THEME above)
+# ─────────────────────────────────────────────────────────────
+INK     = "#0C0C0E"
+SURFACE = "#141418"
+SURF2   = "#1C1C22"
+BORDER  = "#2A2A32"
+TEXT    = "#E8E6E1"
+MUTED   = "#7A7880"
+AMBER   = "#E8A838"
+RED     = "#E05252"
+GREEN   = "#52B788"
+BLUE    = "#5B9BD5"
+
+# Two class colours for scatter / boundary
+C0, C0_BG = RED,   "#2E0E0E"
+C1, C1_BG = BLUE,  "#0D1E2E"
 
 plt.rcParams.update({
-    "figure.facecolor":  "white",
-    "axes.facecolor":    "white",
-    "axes.edgecolor":    LGRAY,
-    "axes.labelcolor":   GRAY,
-    "axes.titlecolor":   "#111111",
+    "figure.facecolor":  INK,
+    "axes.facecolor":    SURFACE,
+    "axes.edgecolor":    BORDER,
+    "axes.labelcolor":   MUTED,
+    "axes.titlecolor":   TEXT,
     "axes.titlesize":    10,
     "axes.titleweight":  "semibold",
     "axes.labelsize":    8,
     "axes.spines.top":   False,
     "axes.spines.right": False,
     "axes.grid":         True,
-    "grid.color":        "#F3F4F6",
-    "grid.linewidth":    0.8,
-    "xtick.color":       GRAY,
-    "ytick.color":       GRAY,
+    "grid.color":        SURF2,
+    "grid.linewidth":    0.6,
+    "xtick.color":       MUTED,
+    "ytick.color":       MUTED,
     "xtick.labelsize":   8,
     "ytick.labelsize":   8,
-    "xtick.major.size":  3,
-    "ytick.major.size":  3,
-    "legend.frameon":    True,
+    "xtick.major.size":  0,
+    "ytick.major.size":  0,
+    "legend.facecolor":  SURF2,
+    "legend.edgecolor":  BORDER,
     "legend.framealpha": 1,
-    "legend.edgecolor":  LGRAY,
     "legend.fontsize":   8,
     "font.family":       "sans-serif",
     "font.size":         9,
-    "text.color":        "#111111",
-    "savefig.bbox":      "tight",
-    "savefig.dpi":       150,
+    "text.color":        TEXT,
 })
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DATA LOADERS  (all cached)
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+#  CACHED DATA
+# ─────────────────────────────────────────────────────────────
 @st.cache_data(show_spinner=False)
 def get_dataset(name: str, n: int, noise: float, seed: int):
-    """Return X, y, feature_names for the chosen dataset."""
     rng = np.random.default_rng(seed)
-
     if name == "Moons":
         X, y = make_moons(n_samples=n, noise=noise, random_state=seed)
         return X, y, ["x1", "x2"]
-
     if name == "Circles":
         X, y = make_circles(n_samples=n, noise=noise, factor=0.45, random_state=seed)
         return X, y, ["x1", "x2"]
-
     if name == "XOR":
         pts = []
-        for cx, cy, cls in [(-1.5, 1.5, 0), (1.5, -1.5, 0),
-                             (1.5,  1.5, 1), (-1.5, -1.5, 1)]:
+        for cx, cy, cls in [(-1.5,1.5,0),(1.5,-1.5,0),(1.5,1.5,1),(-1.5,-1.5,1)]:
             k = n // 4
             pts.append(np.column_stack([
                 rng.normal(cx, 0.55 + noise * 2.5, k),
@@ -138,14 +146,12 @@ def get_dataset(name: str, n: int, noise: float, seed: int):
             ]))
         arr = np.vstack(pts)
         return arr[:, :2], arr[:, 2].astype(int), ["x1", "x2"]
-
     if name == "Breast Cancer":
-        data = load_breast_cancer()
-        X, y = data.data[:, :2], data.target
-        idx  = rng.choice(len(y), min(n, len(y)), replace=False)
-        return X[idx], y[idx], list(data.feature_names[:2])
-
-    # Default — linearly separable
+        d = load_breast_cancer()
+        X, y = d.data[:, :2], d.target
+        idx = rng.choice(len(y), min(n, len(y)), replace=False)
+        return X[idx], y[idx], list(d.feature_names[:2])
+    # Linear
     X, y = make_classification(
         n_samples=n, n_features=2,
         n_informative=2, n_redundant=0,
@@ -157,319 +163,303 @@ def get_dataset(name: str, n: int, noise: float, seed: int):
 
 
 @st.cache_data(show_spinner=False)
-def fit_model(
-    X_tr, y_tr,
-    max_depth, min_split, min_leaf,
-    max_feat, criterion, splitter, cw,
-):
-    """Fit and return a DecisionTreeClassifier (cached by its inputs)."""
+def fit_model(X_tr, y_tr, max_depth, min_split, min_leaf,
+              max_feat, criterion, splitter, cw):
     clf = DecisionTreeClassifier(
-        max_depth=max_depth,
-        min_samples_split=min_split,
-        min_samples_leaf=min_leaf,
-        max_features=max_feat,
-        criterion=criterion,
-        splitter=splitter,
-        class_weight=cw,
-        random_state=42,
+        max_depth=max_depth, min_samples_split=min_split,
+        min_samples_leaf=min_leaf, max_features=max_feat,
+        criterion=criterion, splitter=splitter,
+        class_weight=cw, random_state=42,
     )
-    clf.fit(X_tr, y_tr)
-    return clf
+    return clf.fit(X_tr, y_tr)
 
 
 @st.cache_data(show_spinner=False)
-def depth_sweep(_X_tr, _y_tr, _X_te, _y_te, criterion: str):
-    """Compute train/test accuracy for max_depth 1–15 (cached)."""
-    train_acc, test_acc = [], []
+def depth_sweep(X_tr, y_tr, X_te, y_te, criterion: str):
+    tr_acc, te_acc = [], []
     for d in range(1, 16):
         m = DecisionTreeClassifier(max_depth=d, criterion=criterion, random_state=42)
-        m.fit(_X_tr, _y_tr)
-        train_acc.append(accuracy_score(_y_tr, m.predict(_X_tr)) * 100)
-        test_acc.append(accuracy_score(_y_te, m.predict(_X_te)) * 100)
-    return train_acc, test_acc
+        m.fit(X_tr, y_tr)
+        tr_acc.append(accuracy_score(y_tr, m.predict(X_tr)) * 100)
+        te_acc.append(accuracy_score(y_te, m.predict(X_te)) * 100)
+    return tr_acc, te_acc
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# PLOT FUNCTIONS  (pure — no Streamlit calls, no side effects)
-# ─────────────────────────────────────────────────────────────────────────────
-_C0, _C1         = RED,  BLUE          # scatter dot colours
-_C0_BG, _C1_BG  = "#FEF2F2", "#EFF6FF" # boundary fill colours
+# ─────────────────────────────────────────────────────────────
+#  CHART FUNCTIONS  (pure — no st.* calls inside)
+# ─────────────────────────────────────────────────────────────
+def _ax(ax):
+    ax.set_facecolor(SURFACE)
+    ax.spines["left"].set_color(BORDER)
+    ax.spines["bottom"].set_color(BORDER)
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.tick_params(colors=MUTED)
 
 
-def _style_ax(ax):
-    for sp in ("top", "right"):
-        ax.spines[sp].set_visible(False)
-    ax.spines["left"].set_color(LGRAY)
-    ax.spines["bottom"].set_color(LGRAY)
+def chart_boundary(clf, X_tr, X_te, y_tr, y_te, fn):
+    fig, (ax_tr, ax_te) = plt.subplots(1, 2, figsize=(12, 4.2))
+    fig.patch.set_facecolor(INK)
+    cmap = ListedColormap([C0_BG, C1_BG])
 
-
-def chart_boundary(clf, X_tr, X_te, y_tr, y_te, feat_names):
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-    cmap_bg = ListedColormap([_C0_BG, _C1_BG])
-
-    for ax, (X_s, y_s), title in zip(
-        axes,
-        [(X_tr, y_tr), (X_te, y_te)],
-        ["Training set", "Test set"],
-    ):
-        _style_ax(ax)
+    for ax, Xs, ys, title in [
+        (ax_tr, X_tr, y_tr, "Training set"),
+        (ax_te, X_te, y_te, "Test set"),
+    ]:
+        _ax(ax)
         try:
             DecisionBoundaryDisplay.from_estimator(
-                clf, X_tr, ax=ax, alpha=0.55,
+                clf, X_tr, ax=ax, alpha=0.7,
                 response_method="predict_proba",
-                plot_method="pcolormesh", cmap=cmap_bg,
+                plot_method="pcolormesh", cmap=cmap,
             )
         except Exception:
             DecisionBoundaryDisplay.from_estimator(
-                clf, X_tr, ax=ax, alpha=0.55,
+                clf, X_tr, ax=ax, alpha=0.7,
                 response_method="predict",
-                plot_method="pcolormesh", cmap=cmap_bg,
+                plot_method="pcolormesh", cmap=cmap,
             )
-        colors = [_C0 if v == 0 else _C1 for v in y_s]
-        ax.scatter(X_s[:, 0], X_s[:, 1], c=colors, s=20,
-                   edgecolors="white", linewidths=0.5, zorder=5)
-        ax.legend(
-            handles=[
-                mpatches.Patch(facecolor=_C1, label="Class 1"),
-                mpatches.Patch(facecolor=_C0, label="Class 0"),
-            ],
-            framealpha=1, loc="upper right",
-        )
+        colors = [C0 if v == 0 else C1 for v in ys]
+        ax.scatter(Xs[:, 0], Xs[:, 1], c=colors, s=18,
+                   edgecolors=INK, linewidths=0.4, zorder=5)
+        ax.legend(handles=[
+            mpatches.Patch(facecolor=C1, edgecolor=BORDER, label="Class 1"),
+            mpatches.Patch(facecolor=C0, edgecolor=BORDER, label="Class 0"),
+        ])
         ax.set_title(title)
-        ax.set_xlabel(feat_names[0])
-        ax.set_ylabel(feat_names[1])
+        ax.set_xlabel(fn[0])
+        ax.set_ylabel(fn[1])
 
     fig.tight_layout(pad=2.0)
     return fig
 
 
-def chart_tree(clf, feat_names, max_show):
+def chart_tree(clf, fn, max_show):
     depth = min(clf.get_depth(), max_show)
-    w = min(max(8, 4 * (2 ** depth)), 26)
+    w = min(max(9, 4 * (2 ** depth)), 26)
     h = max(4, 2.4 * (depth + 1))
     fig, ax = plt.subplots(figsize=(w, h))
+    fig.patch.set_facecolor(INK)
+    ax.set_facecolor(INK)
     for sp in ax.spines.values():
         sp.set_visible(False)
     ax.set_xticks([])
     ax.set_yticks([])
     plot_tree(
-        clf,
-        feature_names=feat_names,
+        clf, feature_names=fn,
         class_names=["Class 0", "Class 1"],
         filled=True, rounded=True,
         impurity=True, proportion=False,
-        max_depth=max_show,
-        ax=ax, fontsize=8, precision=3,
+        max_depth=max_show, ax=ax,
+        fontsize=8, precision=3,
     )
-    suffix = (f"  —  showing {depth + 1} of {clf.get_depth() + 1} levels"
+    suffix = (f"  ·  {depth + 1} of {clf.get_depth() + 1} levels shown"
               if clf.get_depth() > max_show else "")
-    ax.set_title(f"Tree structure{suffix}")
+    ax.set_title(f"Tree structure{suffix}", color=TEXT)
     fig.tight_layout()
     return fig
 
 
-def chart_depth_vs_acc(train_acc, test_acc, current_depth):
+def chart_depth_acc(tr_acc, te_acc, cur_depth):
     depths = list(range(1, 16))
-    fig, ax = plt.subplots(figsize=(8, 3.8))
-    _style_ax(ax)
-    ax.plot(depths, train_acc, color=BLUE, lw=1.8, marker="o", ms=4, label="Train")
-    ax.plot(depths, test_acc,  color=GRAY, lw=1.8, marker="o", ms=4, label="Test")
-    ax.fill_between(depths, train_acc, test_acc,
-                    where=[t > v for t, v in zip(train_acc, test_acc)],
-                    color=RED, alpha=0.07, label="Overfit gap")
-    ax.axvline(current_depth, color=RED, lw=1.2, linestyle="--",
-               label=f"Current  (depth = {current_depth})")
+    fig, ax = plt.subplots(figsize=(9, 3.8))
+    fig.patch.set_facecolor(INK)
+    _ax(ax)
+
+    ax.fill_between(depths, tr_acc, te_acc,
+                    where=[t > v for t, v in zip(tr_acc, te_acc)],
+                    color=RED, alpha=0.12, zorder=1)
+    ax.plot(depths, tr_acc, color=AMBER, lw=2,
+            marker="o", ms=4, label="Train accuracy", zorder=3)
+    ax.plot(depths, te_acc, color=BLUE,  lw=2,
+            marker="o", ms=4, label="Test accuracy", zorder=3)
+    ax.axvline(cur_depth, color=RED, lw=1.2,
+               linestyle="--", label=f"Current  depth = {cur_depth}", zorder=4)
+
     ax.set_xlabel("max_depth")
     ax.set_ylabel("Accuracy (%)")
-    ax.set_title("Accuracy vs max_depth")
+    ax.set_title("Accuracy vs max_depth  —  bias–variance tradeoff")
     ax.set_ylim(25, 103)
     ax.set_xlim(0.5, 15.5)
-    ax.legend(loc="lower right")
+    ax.yaxis.set_major_formatter(mticker.FormatStrFormatter("%g%%"))
+    ax.legend(framealpha=1)
     fig.tight_layout()
     return fig
 
 
-def chart_feat_importance(clf, feat_names):
-    fi = clf.feature_importances_
-    order = np.argsort(fi)
-    fig, ax = plt.subplots(figsize=(7, max(2.5, len(feat_names) * 0.5 + 1)))
-    _style_ax(ax)
-    colors = [BLUE if i == order[-1] else LGRAY for i in range(len(fi))]
-    bars = ax.barh(
-        [feat_names[i] for i in order],
-        fi[order],
-        color=[colors[i] for i in order],
-        edgecolor="none", height=0.5,
-    )
-    for bar, val in zip(bars, fi[order]):
-        ax.text(
-            val + max(fi) * 0.02,
-            bar.get_y() + bar.get_height() / 2,
-            f"{val:.3f}", va="center", ha="left",
-            color=GRAY, fontsize=8,
-        )
-    ax.set_xlim(0, max(fi) * 1.3)
+def chart_feat_imp(clf, fn):
+    fi     = clf.feature_importances_
+    order  = np.argsort(fi)
+    labels = [fn[i] for i in order]
+    vals   = fi[order]
+    colors = [AMBER if i == order[-1] else MUTED for i in range(len(fi))]
+
+    fig, ax = plt.subplots(figsize=(7, max(2.5, len(fn) * 0.55 + 1.2)))
+    fig.patch.set_facecolor(INK)
+    _ax(ax)
+
+    bars = ax.barh(labels, vals,
+                   color=[colors[i] for i in range(len(order))],
+                   edgecolor="none", height=0.45)
+    for bar, val in zip(bars, vals):
+        ax.text(val + max(fi) * 0.02,
+                bar.get_y() + bar.get_height() / 2,
+                f"{val:.3f}", va="center", ha="left",
+                color=MUTED, fontsize=8)
+
+    ax.set_xlim(0, max(fi) * 1.35)
     ax.set_xlabel("Gini importance")
     ax.set_title("Feature importances")
-    ax.grid(axis="x")
+    ax.grid(axis="x", color=SURF2, linewidth=0.6)
     ax.grid(axis="y", visible=False)
     fig.tight_layout()
     return fig
 
 
 def chart_confusion(clf, X_te, y_te):
-    fig, ax = plt.subplots(figsize=(4, 3.6))
-    _style_ax(ax)
+    fig, ax = plt.subplots(figsize=(4.2, 3.8))
+    fig.patch.set_facecolor(INK)
+    ax.set_facecolor(SURFACE)
+    for sp in ax.spines.values():
+        sp.set_color(BORDER)
+
     ConfusionMatrixDisplay(
         confusion_matrix(y_te, clf.predict(X_te)),
         display_labels=["Class 0", "Class 1"],
-    ).plot(ax=ax, colorbar=False, cmap="Blues")
-    ax.set_title("Confusion matrix  (test set)")
+    ).plot(ax=ax, colorbar=False, cmap="YlOrBr")
+
+    ax.set_title("Confusion matrix  (test set)", color=TEXT)
+    ax.xaxis.label.set_color(MUTED)
+    ax.yaxis.label.set_color(MUTED)
+    ax.tick_params(colors=MUTED)
     for txt in ax.texts:
         txt.set_fontsize(13)
         txt.set_fontweight("bold")
+        txt.set_color(INK)
     fig.tight_layout()
     return fig
 
 
 def chart_leaf_dist(clf):
     samples, impurities = [], []
-
-    def _walk(node):
-        left = clf.tree_.children_left[node]
-        if left == -1:
-            samples.append(clf.tree_.n_node_samples[node])
-            impurities.append(clf.tree_.impurity[node])
+    def _walk(n):
+        lc = clf.tree_.children_left[n]
+        if lc == -1:
+            samples.append(clf.tree_.n_node_samples[n])
+            impurities.append(clf.tree_.impurity[n])
         else:
-            _walk(left)
-            _walk(clf.tree_.children_right[node])
-
+            _walk(lc); _walk(clf.tree_.children_right[n])
     _walk(0)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 3.5))
-    for ax, data, xlabel, color in [
-        (ax1, samples,     "Samples per leaf",     BLUE),
-        (ax2, impurities,  "Gini impurity per leaf", GRAY),
+    fig.patch.set_facecolor(INK)
+
+    for ax, data, label, color in [
+        (ax1, samples,     "Samples per leaf",       AMBER),
+        (ax2, impurities,  "Gini impurity per leaf",  BLUE),
     ]:
-        _style_ax(ax)
-        ax.hist(data, bins=min(30, max(5, len(data) // 3)),
-                color=color, alpha=0.25, edgecolor=color, linewidth=0.7)
+        _ax(ax)
+        ax.hist(data,
+                bins=min(30, max(5, len(data) // 3)),
+                color=color, alpha=0.25,
+                edgecolor=color, linewidth=0.8)
         ax.axvline(np.mean(data), color=RED, lw=1.3, linestyle="--",
                    label=f"Mean  {np.mean(data):.2f}")
-        ax.set_xlabel(xlabel)
+        ax.set_xlabel(label)
         ax.set_ylabel("Count")
         ax.legend()
+
     fig.tight_layout(pad=2.0)
     return fig
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# SIDEBAR
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+#  SIDEBAR
+# ─────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("### Decision Tree Explorer")
-    st.write("Tune the parameters below and every chart updates live.")
+    st.caption("Adjust any parameter — all charts update live.")
     st.divider()
 
-    # ── Dataset ──────────────────────────────────────────────
     st.markdown("**Dataset**")
-    dataset_name = st.selectbox(
-        "Dataset",
-        ["Moons", "Circles", "XOR", "Linear", "Breast Cancer"],
-        help="Moons and Circles are non-linearly separable. "
-             "XOR has four clusters in a checkerboard pattern. "
-             "Breast Cancer uses the first two features of the sklearn dataset.",
+    dataset = st.selectbox(
+        "Dataset", ["Moons", "Circles", "XOR", "Linear", "Breast Cancer"],
         label_visibility="collapsed",
     )
     n_samples = st.slider(
-        "Number of samples", 200, 2000, 600, step=100,
-        help="More samples = more stable accuracy estimates, slower training.",
+        "Samples", 200, 2000, 600, step=100,
+        help="Total number of data points to generate.",
     )
     noise = st.slider(
         "Noise", 0.00, 0.50, 0.20, step=0.05,
-        help="How much random scatter to add to the data.",
+        help="Scatter added to the data. Higher values make classification harder.",
     )
-    col_ts, col_sd = st.columns(2)
-    test_pct  = col_ts.slider("Test %",   10, 40,  25, step=5)
-    rand_seed = col_sd.slider("Seed",      0, 99,  42)
+    col_a, col_b = st.columns(2)
+    test_pct  = col_a.slider("Test %", 10, 40, 25, step=5)
+    rand_seed = col_b.slider("Seed",    0, 99, 42)
 
     st.divider()
-
-    # ── Model hyperparameters ─────────────────────────────────
-    st.markdown("**Hyperparameters**")
+    st.markdown("**Model hyperparameters**")
 
     max_depth = st.slider(
         "max_depth", 1, 15, 4,
-        help="Maximum depth the tree is allowed to grow. "
-             "Shallow = simple / underfitting. Deep = complex / overfitting.",
+        help="How many levels the tree is allowed to grow. "
+             "Shallow = simpler model. Deep = more complex, higher overfit risk.",
     )
     min_samples_split = st.slider(
         "min_samples_split", 2, 60, 2,
-        help="A node will only be split if it contains at least this many samples. "
-             "Higher values prevent splits on tiny groups.",
+        help="Minimum samples a node must hold before it can be split further.",
     )
     min_samples_leaf = st.slider(
         "min_samples_leaf", 1, 40, 1,
-        help="Every leaf must hold at least this many training samples. "
+        help="Every leaf must contain at least this many samples. "
              "Higher values smooth the decision boundary.",
     )
     max_features = st.selectbox(
-        "max_features",
-        ["all", "sqrt", "log2"],
-        help="Number of features to consider at each split. "
-             "'all' considers every feature; 'sqrt'/'log2' add randomness.",
+        "max_features", ["all", "sqrt", "log2"],
+        help="How many features to consider at each split candidate.",
     )
     criterion = st.selectbox(
-        "criterion",
-        ["gini", "entropy", "log_loss"],
-        help="The function used to measure the quality of a split.",
+        "criterion", ["gini", "entropy", "log_loss"],
+        help="The impurity measure used to evaluate split quality.",
     )
     splitter = st.selectbox(
-        "splitter",
-        ["best", "random"],
-        help="'best' always picks the globally optimal split. "
-             "'random' samples split candidates, adding variance.",
+        "splitter", ["best", "random"],
+        help="'best' always picks the optimal split; "
+             "'random' introduces stochastic variation.",
     )
     class_weight = st.selectbox(
-        "class_weight",
-        ["None", "balanced"],
-        help="'balanced' adjusts sample weights inversely to class frequency. "
-             "Useful when one class heavily outnumbers the other.",
+        "class_weight", ["None", "balanced"],
+        help="'balanced' upweights minority-class samples proportionally.",
     )
 
     st.divider()
-
-    # ── Quick presets ─────────────────────────────────────────
     st.markdown("**Presets**")
-    col_a, col_b = st.columns(2)
-    if col_a.button("Stump",    use_container_width=True):
+    col_c, col_d = st.columns(2)
+    if col_c.button("Stump",    use_container_width=True):
         max_depth, min_samples_split, min_samples_leaf = 1, 2, 1
-    if col_b.button("Balanced", use_container_width=True):
-        max_depth, min_samples_split, min_samples_leaf = 4, 5, 3
-    if col_a.button("Overfit",  use_container_width=True):
+    if col_c.button("Overfit",  use_container_width=True):
         max_depth, min_samples_split, min_samples_leaf = 15, 2, 1
-    if col_b.button("Pruned",   use_container_width=True):
+    if col_d.button("Balanced", use_container_width=True):
+        max_depth, min_samples_split, min_samples_leaf = 4, 5, 3
+    if col_d.button("Pruned",   use_container_width=True):
         max_depth, min_samples_split, min_samples_leaf = 5, 20, 8
 
-# Resolve selectbox strings to sklearn values
-_max_feat = None   if max_features == "all"  else max_features
-_cw       = None   if class_weight == "None" else "balanced"
+_max_feat = None       if max_features == "all"  else max_features
+_cw       = None       if class_weight == "None" else "balanced"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# DATA  +  MODEL  (both cached)
-# ─────────────────────────────────────────────────────────────────────────────
-with st.spinner("Loading dataset…"):
-    X, y, feat_names = get_dataset(dataset_name, n_samples, noise, rand_seed)
+# ─────────────────────────────────────────────────────────────
+#  FIT
+# ─────────────────────────────────────────────────────────────
+with st.spinner("Loading data…"):
+    X, y, fn = get_dataset(dataset, n_samples, noise, rand_seed)
 
 X_tr, X_te, y_tr, y_te = train_test_split(
-    X, y,
-    test_size=test_pct / 100,
-    random_state=rand_seed,
-    stratify=y,
+    X, y, test_size=test_pct / 100,
+    random_state=rand_seed, stratify=y,
 )
 
-# Convert arrays to tuples so cache hash is stable
 with st.spinner("Fitting model…"):
     clf = fit_model(
         X_tr, y_tr,
@@ -477,203 +467,176 @@ with st.spinner("Fitting model…"):
         _max_feat, criterion, splitter, _cw,
     )
 
-# ── Derived stats ─────────────────────────────────────────────
-train_acc = accuracy_score(y_tr, clf.predict(X_tr)) * 100
-test_acc  = accuracy_score(y_te, clf.predict(X_te)) * 100
-gap       = train_acc - test_acc
-tree_depth   = clf.get_depth()
-n_leaves     = clf.get_n_leaves()
-n_nodes      = clf.tree_.node_count
+tr_acc  = accuracy_score(y_tr, clf.predict(X_tr)) * 100
+te_acc  = accuracy_score(y_te, clf.predict(X_te)) * 100
+gap     = tr_acc - te_acc
+depth   = clf.get_depth()
+n_nodes = clf.tree_.node_count
+n_leaves= clf.get_n_leaves()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# HEADER
-# ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
+#  HEADER
+# ─────────────────────────────────────────────────────────────
 st.markdown("## Decision Tree Explorer")
 st.caption(
-    f"Dataset: **{dataset_name}**  ·  "
-    f"{len(X_tr):,} training samples  ·  "
-    f"{len(X_te):,} test samples  ·  "
-    f"Features: `{feat_names[0]}`, `{feat_names[1]}`"
+    f"Dataset: **{dataset}**  ·  "
+    f"{len(X_tr):,} train  /  {len(X_te):,} test  ·  "
+    f"Features: `{fn[0]}`, `{fn[1]}`"
 )
 st.divider()
 
-# ── Key metrics ───────────────────────────────────────────────
-col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
-col1.metric("Train accuracy",  f"{train_acc:.1f}%")
-col2.metric("Test accuracy",   f"{test_acc:.1f}%",
-            delta=f"{gap:+.1f}% gap",
-            delta_color="inverse" if gap > 10 else "normal")
-col3.metric("Tree depth",      str(tree_depth))
-col4.metric("Total nodes",     str(n_nodes))
-col5.metric("Leaf nodes",      str(n_leaves))
-col6.metric("Train samples",   f"{len(X_tr):,}")
-col7.metric("Test samples",    f"{len(X_te):,}")
+# ── Metrics ──
+c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
+c1.metric("Train accuracy",  f"{tr_acc:.1f}%")
+c2.metric("Test accuracy",   f"{te_acc:.1f}%",
+          delta=f"{gap:+.1f}% gap",
+          delta_color="inverse" if gap > 10 else "normal")
+c3.metric("Tree depth",      str(depth))
+c4.metric("Total nodes",     str(n_nodes))
+c5.metric("Leaf nodes",      str(n_leaves))
+c6.metric("Train n",         f"{len(X_tr):,}")
+c7.metric("Test n",          f"{len(X_te):,}")
 
-# ── Diagnostic banner (single, contextual) ───────────────────
-if gap > 15 and train_acc > 95:
+# ── Single contextual banner ──
+if gap > 15 and tr_acc > 95:
     st.error(
-        f"**Overfitting.** Train accuracy is {gap:.1f} percentage points above test. "
-        "The tree is memorising the training data. "
-        "Try increasing `min_samples_split`, increasing `min_samples_leaf`, "
-        "or reducing `max_depth`."
+        f"**Overfitting.** Train is {gap:.1f}pp above test. "
+        "The tree is memorising the training set. "
+        "Raise `min_samples_split`, raise `min_samples_leaf`, or reduce `max_depth`."
     )
-elif test_acc < 68:
+elif te_acc < 68:
     st.warning(
-        "**Underfitting.** Test accuracy is low — the model is too simple to capture the pattern. "
-        "Try increasing `max_depth` or decreasing `min_samples_split`."
+        "**Underfitting.** Test accuracy is low — the model is too simple. "
+        "Increase `max_depth` or lower `min_samples_split`."
     )
-elif gap < 3 and test_acc > 88:
+elif gap < 3 and te_acc > 88:
     st.success(
-        f"**Good generalisation.** Train and test accuracy are close ({gap:.1f}% gap), "
-        "and test accuracy is strong."
+        f"**Generalising well.** Train–test gap is only {gap:.1f}pp "
+        f"and test accuracy is {te_acc:.1f}%."
     )
 
 st.divider()
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# TABS
-# ─────────────────────────────────────────────────────────────────────────────
-tab_boundary, tab_tree, tab_bias, tab_leaves, tab_importance, tab_report = st.tabs([
+# ─────────────────────────────────────────────────────────────
+#  TABS
+# ─────────────────────────────────────────────────────────────
+(tab_bnd, tab_tree, tab_bias,
+ tab_leaf, tab_imp, tab_report) = st.tabs([
     "Decision boundary",
     "Tree structure",
     "Depth vs accuracy",
     "Leaf analysis",
     "Feature importance",
-    "Full report",
+    "Report",
 ])
 
 
-# ── Decision boundary ─────────────────────────────────────────
-with tab_boundary:
+# ── Decision boundary ────────────────────────────────────────
+with tab_bnd:
     st.write(
-        "The coloured regions show the class the tree predicts for every point in "
-        "feature space. Because decision trees split on a single feature at a time, "
-        "every boundary is a straight horizontal or vertical line."
+        "Each coloured region is the class the tree predicts for every point "
+        "in that area of feature space. Because trees split one feature at a time, "
+        "every boundary must be a horizontal or vertical line — "
+        "complex shapes are built from many such cuts stacked together."
     )
-    st.pyplot(chart_boundary(clf, X_tr, X_te, y_tr, y_te, feat_names),
+    st.pyplot(chart_boundary(clf, X_tr, X_te, y_tr, y_te, fn),
               use_container_width=True)
-
     st.divider()
     left, right = st.columns(2)
     with left:
-        st.markdown("**Reading the chart**")
+        st.markdown("**What to look for**")
         st.markdown(
-            "- All boundaries are axis-aligned — this is a hard constraint of decision trees.\n"
-            "- A fragmented boundary with many small islands usually signals overfitting.\n"
-            "- A smooth boundary with large regions typically generalises better.\n"
-            "- Any point plotted inside the wrong colour region is a misclassification."
+            "- All splits are axis-aligned — this is a hard geometric constraint.\n"
+            "- Many small islands in the training plot but smooth blobs in the test "
+            "plot is a classic sign of overfitting.\n"
+            "- Points plotted inside the wrong region are misclassifications."
         )
     with right:
         st.markdown("**What your current settings produce**")
         if max_depth <= 2:
-            st.info(
-                "Depth 1–2 creates very coarse regions. "
-                "The boundary cannot follow the true shape of the data."
-            )
+            st.info("Depth 1–2 produces very coarse, blocky regions. "
+                    "The boundary cannot follow the true shape of the data.")
         elif gap > 12:
-            st.warning(
-                "The boundary is fragmented. The tree is fitting noise in the "
-                "training set and will not generalise."
-            )
+            st.warning("The boundary is fragmented. The tree is fitting "
+                       "noise rather than signal.")
         elif min_samples_leaf >= 8:
-            st.info(
-                "A large `min_samples_leaf` forces larger leaf regions, "
-                "producing a smoother boundary."
-            )
+            st.info("A high `min_samples_leaf` forces larger leaf regions, "
+                    "producing a smoother, more conservative boundary.")
         else:
-            st.info(
-                "The boundary looks balanced. "
-                "Increase `max_depth` and watch it fragment; "
-                "increase `min_samples_leaf` and watch it smooth out."
-            )
+            st.info("Settings look balanced. Try pushing `max_depth` to 10+ "
+                    "to see the boundary fragment, or `min_samples_leaf` to 10+ "
+                    "to see it smooth out.")
 
 
-# ── Tree structure ────────────────────────────────────────────
+# ── Tree structure ───────────────────────────────────────────
 with tab_tree:
     st.write(
-        "Each internal node shows the split condition (`feature ≤ threshold`), "
-        "the Gini impurity, and the number of training samples that reach that node. "
-        "Each leaf shows the predicted class and sample count. "
-        "Left branch takes the True path; right branch takes the False path."
+        "Each internal node shows the split rule (`feature ≤ threshold`), "
+        "Gini impurity, and sample count. "
+        "Leaves show the predicted class. "
+        "Left branch = condition is True, right = False."
     )
-    levels_to_show = st.slider(
-        "Levels to display",
-        min_value=1,
-        max_value=min(10, tree_depth + 1),
-        value=min(4, tree_depth + 1),
-        key="tree_depth_slider",
+    lvl = st.slider(
+        "Levels to show", 1, min(10, depth + 1), min(4, depth + 1),
+        key="tree_lvl",
     )
-    st.pyplot(chart_tree(clf, feat_names, levels_to_show),
-              use_container_width=True)
-    if tree_depth > levels_to_show:
-        st.caption(
-            f"The full tree has {tree_depth + 1} levels. "
-            "Use the slider above to reveal deeper levels."
-        )
-    with st.expander("View raw decision rules as text"):
-        rules = export_text(clf, feature_names=feat_names, max_depth=8)
-        st.code(rules, language="text")
+    st.pyplot(chart_tree(clf, fn, lvl), use_container_width=True)
+    if depth > lvl:
+        st.caption(f"Full tree has {depth + 1} levels. Increase the slider to reveal more.")
+    with st.expander("Text decision rules"):
+        st.code(export_text(clf, feature_names=fn, max_depth=8), language="text")
 
 
-# ── Depth vs accuracy ─────────────────────────────────────────
+# ── Depth vs accuracy ────────────────────────────────────────
 with tab_bias:
     st.write(
-        "This chart trains a fresh tree for every value of `max_depth` from 1 to 15, "
-        "keeping all other hyperparameters fixed. "
-        "It shows the classic bias–variance tradeoff: "
-        "shallow trees underfit (high bias), deep trees overfit (high variance). "
+        "A fresh tree is trained for every value of `max_depth` from 1 to 15, "
+        "holding all other hyperparameters constant. "
+        "The amber line is training accuracy; the blue line is test accuracy. "
+        "The red shading between them is the overfit gap. "
         "The vertical dashed line marks your current setting."
     )
-    with st.spinner("Computing depth sweep…"):
-        tr_sweep, te_sweep = depth_sweep(X_tr, y_tr, X_te, y_te, criterion)
-
-    st.pyplot(chart_depth_vs_acc(tr_sweep, te_sweep, max_depth),
-              use_container_width=True)
-
+    with st.spinner("Running depth sweep…"):
+        tr_sw, te_sw = depth_sweep(X_tr, y_tr, X_te, y_te, criterion)
+    st.pyplot(chart_depth_acc(tr_sw, te_sw, max_depth), use_container_width=True)
     st.divider()
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown("**Left of the sweet spot**")
+    ca, cb, cc = st.columns(3)
+    with ca:
+        st.markdown("**Underfitting region** (left)")
         st.markdown(
-            "Both train and test accuracy are low. "
-            "The model does not have enough capacity to learn the pattern. "
-            "This is high bias / underfitting."
+            "Both curves are low. The tree lacks the capacity to learn "
+            "the pattern in the data. This is high-bias."
         )
-    with c2:
-        st.markdown("**Sweet spot**")
+    with cb:
+        st.markdown("**Sweet spot** (middle)")
         st.markdown(
-            "Test accuracy is highest and the gap between train and test is small. "
-            "The model generalises well. "
-            "The optimal `max_depth` is usually in this region."
+            "Test accuracy is near its peak and the gap to training is small. "
+            "The model generalises well to unseen data."
         )
-    with c3:
-        st.markdown("**Right of the sweet spot**")
+    with cc:
+        st.markdown("**Overfitting region** (right)")
         st.markdown(
-            "Train accuracy approaches 100% but test accuracy plateaus or drops. "
-            "The gap widens. "
-            "The model is memorising training data. "
-            "This is high variance / overfitting."
+            "Training accuracy approaches 100% but test accuracy plateaus or drops. "
+            "The tree is memorising noise. This is high-variance."
         )
 
 
-# ── Leaf analysis ─────────────────────────────────────────────
-with tab_leaves:
+# ── Leaf analysis ────────────────────────────────────────────
+with tab_leaf:
     st.write(
-        "These histograms show how many samples each leaf node holds "
-        "and how pure each leaf is. A Gini impurity of 0 means a leaf contains "
-        "only one class — the tree has perfectly separated those training samples. "
-        "Many pure leaves with a large train–test gap is a sign of overfitting."
+        "A leaf with Gini impurity = 0 contains only one class — "
+        "the tree has perfectly separated those training samples. "
+        "Many pure leaves alongside a large train–test gap "
+        "strongly indicates overfitting."
     )
     st.pyplot(chart_leaf_dist(clf), use_container_width=True)
-
     st.divider()
+
     tree_ = clf.tree_
-    leaf_ids = [
-        i for i in range(tree_.node_count)
-        if tree_.children_left[i] == -1
-    ]
+    leaf_ids = [i for i in range(tree_.node_count)
+                if tree_.children_left[i] == -1]
     rows = []
     for lid in leaf_ids:
         n    = tree_.n_node_samples[lid]
@@ -682,86 +645,74 @@ with tab_leaves:
         cls  = int(np.argmax(val))
         conf = val[cls] / val.sum() * 100
         rows.append({
-            "Leaf node":      lid,
+            "Leaf":           lid,
             "Samples":        n,
             "Gini impurity":  round(gini, 4),
             "Predicted class": cls,
             "Confidence (%)": round(conf, 1),
         })
-
     df_leaves = pd.DataFrame(rows).sort_values("Samples", ascending=False)
-
-    st.markdown("**All leaf nodes**")
     st.dataframe(
         df_leaves.style
-            .background_gradient(subset=["Gini impurity"], cmap="YlOrRd")
-            .background_gradient(subset=["Confidence (%)"], cmap="Blues")
+            .background_gradient(subset=["Gini impurity"],  cmap="YlOrRd")
+            .background_gradient(subset=["Confidence (%)"], cmap="YlGn")
             .format({"Gini impurity": "{:.4f}", "Confidence (%)": "{:.1f}"}),
-        use_container_width=True,
-        height=280,
+        use_container_width=True, height=280,
     )
-
-    pure_pct = (df_leaves["Gini impurity"] < 0.01).mean() * 100
-    avg_n    = df_leaves["Samples"].mean()
-    m1, m2   = st.columns(2)
-    m1.metric("Pure leaves (Gini < 0.01)", f"{pure_pct:.0f}%")
-    m2.metric("Mean samples per leaf",      f"{avg_n:.1f}")
+    m1, m2 = st.columns(2)
+    pure = (df_leaves["Gini impurity"] < 0.01).mean() * 100
+    m1.metric("Pure leaves (Gini < 0.01)", f"{pure:.0f}%")
+    m2.metric("Mean samples per leaf",      f"{df_leaves['Samples'].mean():.1f}")
 
 
-# ── Feature importance ────────────────────────────────────────
-with tab_importance:
+# ── Feature importance ───────────────────────────────────────
+with tab_imp:
     st.write(
-        "Gini-based feature importance measures the total reduction in node impurity "
-        "a feature contributes across all splits in the tree, weighted by the proportion "
-        "of training samples that reach each node. "
-        "A higher value means the feature was more useful for separating the classes."
+        "Gini importance is the total reduction in node impurity a feature contributes, "
+        "weighted by the fraction of training samples reaching each node. "
+        "The amber bar is the most important feature."
     )
-    st.pyplot(chart_feat_importance(clf, feat_names), use_container_width=True)
-
-    fi_df = pd.DataFrame({
-        "Feature":    feat_names,
-        "Importance": clf.feature_importances_,
-    }).sort_values("Importance", ascending=False).reset_index(drop=True)
+    st.pyplot(chart_feat_imp(clf, fn), use_container_width=True)
+    fi_df = (
+        pd.DataFrame({"Feature": fn, "Importance": clf.feature_importances_})
+        .sort_values("Importance", ascending=False)
+        .reset_index(drop=True)
+    )
     fi_df.index += 1
     fi_df.index.name = "Rank"
     st.dataframe(
         fi_df.style
             .format({"Importance": "{:.4f}"})
-            .background_gradient(subset=["Importance"], cmap="Blues"),
+            .background_gradient(subset=["Importance"], cmap="YlOrBr"),
         use_container_width=True,
     )
-    st.caption(
-        "Note: these importances are computed on the two visualisation features only. "
-        "On a real dataset with many features, always inspect importances across all of them."
-    )
 
 
-# ── Full report ───────────────────────────────────────────────
+# ── Report ───────────────────────────────────────────────────
 with tab_report:
-    col_left, col_right = st.columns([1, 1])
-
-    with col_left:
+    cl, cr = st.columns(2)
+    with cl:
         st.markdown("**Confusion matrix**")
         st.pyplot(chart_confusion(clf, X_te, y_te), use_container_width=True)
-
-    with col_right:
+    with cr:
         st.markdown("**Classification report**")
-        report_dict = classification_report(
-            y_te, clf.predict(X_te),
-            target_names=["Class 0", "Class 1"],
-            output_dict=True,
-        )
-        report_df = pd.DataFrame(report_dict).T
+        rdf = pd.DataFrame(
+            classification_report(
+                y_te, clf.predict(X_te),
+                target_names=["Class 0", "Class 1"],
+                output_dict=True,
+            )
+        ).T
         st.dataframe(
-            report_df.style
+            rdf.style
                 .format("{:.3f}", subset=["precision", "recall", "f1-score"])
-                .background_gradient(subset=["f1-score"], cmap="Blues"),
+                .background_gradient(subset=["f1-score"], cmap="YlGn"),
             use_container_width=True,
         )
 
     st.divider()
     st.markdown("**Current configuration**")
-    config_df = pd.DataFrame([{
+    st.dataframe(pd.DataFrame([{
         "max_depth":          max_depth,
         "min_samples_split":  min_samples_split,
         "min_samples_leaf":   min_samples_leaf,
@@ -769,12 +720,10 @@ with tab_report:
         "criterion":          criterion,
         "splitter":           splitter,
         "class_weight":       class_weight,
-    }])
-    st.dataframe(config_df, use_container_width=True)
+    }]), use_container_width=True)
 
     st.markdown("**Reproducible code**")
-    st.code(
-        f"""\
+    st.code(f"""\
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import make_moons
@@ -783,10 +732,7 @@ from sklearn.metrics import accuracy_score
 X, y = make_moons(n_samples={n_samples}, noise={noise:.2f}, random_state={rand_seed})
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y,
-    test_size={test_pct / 100:.2f},
-    random_state={rand_seed},
-    stratify=y,
+    X, y, test_size={test_pct / 100:.2f}, random_state={rand_seed}, stratify=y,
 )
 
 clf = DecisionTreeClassifier(
@@ -803,6 +749,4 @@ clf.fit(X_train, y_train)
 
 print("Train:", accuracy_score(y_train, clf.predict(X_train)))
 print("Test: ", accuracy_score(y_test,  clf.predict(X_test)))
-""",
-        language="python",
-    )
+""", language="python")
