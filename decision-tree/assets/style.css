@@ -1,59 +1,166 @@
-/* assets/style.css */
+/* ============================================================
+   style.css  —  Decision Tree Explorer
+   Loaded once in app.py via st.markdown + open().read()
+   No colours hardcoded here — all colours live in config.toml
+   or matplotlib rcParams in app.py.
+   ============================================================ */
 
-:root {
-    /* These will be overwritten by the Python load_css function */
-    --bg-main: #ffffff;
-    --bg-sidebar: #f8f9fa;
-    --text-main: #202124;
-    --text-muted: #5f6368;
-    --border-color: #dadce0;
-    --accent: #1a73e8;
-}
+/* ── Hide Streamlit chrome ── */
+#MainMenu,
+header,
+footer          { visibility: hidden; }
 
-/* Base Container */
+/* ── Page layout ── */
 .block-container {
-    padding-top: 1.5rem !important;
-    max-width: 1350px !important;
-    background-color: var(--bg-main);
+    padding-top:    1.5rem  !important;
+    padding-bottom: 3rem    !important;
+    max-width:      1380px  !important;
 }
 
-/* Sidebar Fix: Guaranteed Visibility */
+/* ── Sidebar width ── */
 [data-testid="stSidebar"] {
-    background-color: var(--bg-sidebar) !important;
-    border-right: 1px solid var(--border-color) !important;
+    min-width: 260px !important;
+    max-width: 260px !important;
 }
 
-/* Force ALL sidebar elements to respect the theme text color */
-[data-testid="stSidebar"] * {
-    color: var(--text-main) !important;
+/* ── Sidebar section label ── */
+.sidebar-label {
+    font-size:      10px;
+    font-weight:    700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color:          #A1A1AA;
+    margin:         1rem 0 0.4rem 0;
 }
 
-/* Metric Cards: Google Material Style */
+/* ── Metric cards ── */
 [data-testid="stMetric"] {
-    background-color: var(--bg-main) !important;
-    border: 1px solid var(--border-color) !important;
-    border-radius: 12px !important;
-    padding: 15px !important;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+    background:    #FFFFFF;
+    border:        1px solid #E4E4E7;
+    border-radius: 8px;
+    padding:       14px 16px 10px 16px;
 }
-
+[data-testid="stMetricLabel"] > div {
+    font-size:      10px        !important;
+    font-weight:    600         !important;
+    letter-spacing: 0.08em      !important;
+    text-transform: uppercase   !important;
+    color:          #A1A1AA     !important;
+}
 [data-testid="stMetricValue"] > div {
-    color: var(--accent) !important;
-    font-weight: 700 !important;
+    font-size:   1.4rem     !important;
+    font-weight: 700        !important;
+    color:       #18181B    !important;
+}
+[data-testid="stMetricDelta"] > div {
+    font-size: 11px !important;
 }
 
-/* Tabs: Minimalist Google Style */
-button[data-baseweb="tab"] {
+/* ── Divider ── */
+hr {
+    border-color: #E4E4E7 !important;
+    margin:       0.6rem 0 !important;
+}
+
+/* ── Tabs ── */
+[data-baseweb="tab-list"] {
+    gap:             4px        !important;
+    background:      transparent !important;
+    border-bottom:   1px solid #E4E4E7 !important;
+    padding-bottom:  0 !important;
+}
+[data-baseweb="tab"] {
+    background:    transparent  !important;
+    border-radius: 6px 6px 0 0  !important;
+    padding:       8px 16px     !important;
+    font-size:     13px         !important;
+    font-weight:   500          !important;
+    color:         #71717A      !important;
     border-bottom: 2px solid transparent !important;
-    color: var(--text-muted) !important;
+}
+[aria-selected="true"][data-baseweb="tab"] {
+    color:         #18181B      !important;
+    font-weight:   600          !important;
+    border-bottom: 2px solid #18181B !important;
 }
 
-button[data-baseweb="tab"][aria-selected="true"] {
-    border-bottom: 2px solid var(--accent) !important;
-    color: var(--accent) !important;
-    background-color: transparent !important;
+/* ── Expander ── */
+[data-testid="stExpander"] {
+    border:        1px solid #E4E4E7 !important;
+    border-radius: 8px               !important;
+    background:    #FFFFFF           !important;
 }
 
-/* Clean UI */
-#MainMenu, footer { visibility: hidden; }
-header { background-color: transparent !important; }
+/* ── Buttons ── */
+.stButton > button {
+    background:    #18181B     !important;
+    color:         #FAFAFA     !important;
+    border:        none        !important;
+    border-radius: 6px         !important;
+    font-size:     12px        !important;
+    font-weight:   600         !important;
+    padding:       6px 12px   !important;
+    letter-spacing: 0.02em    !important;
+    transition:    opacity 0.15s;
+}
+.stButton > button:hover {
+    opacity: 0.75 !important;
+}
+
+/* ── Info / hint cards ── */
+.hint-card {
+    border-left:   3px solid #E4E4E7;
+    padding:       10px 14px;
+    border-radius: 0 6px 6px 0;
+    margin-bottom: 6px;
+}
+.hint-card .hint-title {
+    font-size:   12px;
+    font-weight: 600;
+    color:       #18181B;
+    margin-bottom: 4px;
+}
+.hint-card .hint-body {
+    font-size:   12px;
+    color:       #71717A;
+    line-height: 1.7;
+}
+
+/* ── State badge ── */
+.state-badge {
+    display:       inline-block;
+    padding:       3px 12px;
+    border-radius: 99px;
+    font-size:     11px;
+    font-weight:   700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border:        1px solid #E4E4E7;
+    color:         #18181B;
+    background:    #F4F4F5;
+}
+
+/* ── Inline code pill ── */
+.pill {
+    display:       inline-block;
+    background:    #F4F4F5;
+    color:         #18181B;
+    font-family:   monospace;
+    font-size:     11px;
+    padding:       1px 7px;
+    border-radius: 4px;
+}
+
+/* ── Caption / sub-text ── */
+[data-testid="stCaptionContainer"] p {
+    color:     #A1A1AA  !important;
+    font-size: 12px     !important;
+}
+
+/* ── Selectbox & slider labels ── */
+[data-testid="stSelectbox"] label p,
+[data-testid="stSlider"]    label p {
+    font-size:   12px   !important;
+    font-weight: 500    !important;
+    color:       #52525B !important;
+}
