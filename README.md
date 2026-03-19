@@ -2,7 +2,7 @@
 
 This repository is a professional-grade collection of machine learning algorithms, data engineering pipelines, and statistical research. It spans the spectrum from foundational "from-scratch" implementations to advanced ensemble modeling and automated web scraping.
 
-## Portfolio Highlights
+## Highlights
 
 ### 1. Mathematical Implementations (From Scratch)
 Understanding the mechanics behind the "black box."
