@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decision Trees - Advanced & Production Guide</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.7;
+            color: #2c3e50;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        
+        .content {
+            padding: 50px;
+        }
+        
+        h2 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+        }
+        
+        h3 {
+            color: #764ba2;
+            font-size: 2em;
+            margin: 40px 0 20px 0;
+        }
+        
+        h4 {
+            color: #34495e;
+            font-size: 1.5em;
+            margin: 30px 0 15px 0;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 25px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 25px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+            line-height: 1.6;
+        }
+        
+        .insight-box {
+            background: linear-gradient(135deg, #f6f9fc 0%, #e9f0f7 100%);
+            border-left: 5px solid #667eea;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 8px;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border-left: 5px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .success-box {
+            background: #d4edda;
+            border-left: 5px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        
+        .math-block {
+            background: #f9f9f9;
+            padding: 30px;
+            margin: 25px 0;
+            border-radius: 8px;
+            border: 2px solid #e1e4e8;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 18px;
+            text-align: left;
+        }
+        
+        td {
+            padding: 15px 18px;
+            border-bottom: 1px solid #e1e4e8;
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin: 30px 0;
+        }
+        
+        .comparison-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-top: 4px solid #667eea;
+        }
+        
+        ul, ol {
+            margin: 20px 0 20px 30px;
+        }
+        
+        li {
+            margin: 12px 0;
+        }
+        
+        strong {
+            color: #667eea;
+        }
+        
+        .example-card {
+            background: white;
+            padding: 30px;
+            margin: 25px 0;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            border-top: 4px solid #764ba2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌳 Decision Trees - Part 2</h1>
+            <p>Advanced Topics, Production Engineering & Research Frontiers</p>
+        </header>
+        
+        <div class="content">
+            <h2>Part 5: Advanced Topics</h2>
+            
+            <h3>1. Ensemble Methods - Beyond Single Trees</h3>
+            
+            <div class="insight-box">
+                <h4>🔍 Why Ensembles Dominate</h4>
+                <p><strong>Bias-Variance Trade-off:</strong> Single decision trees have low bias (can fit complex patterns) but high variance (sensitive to training data). Ensembles reduce variance while maintaining low bias.</p>
+                <p><strong>Empirical Success:</strong> Random Forests, Gradient Boosting, and XGBoost consistently win Kaggle competitions and power production ML systems.</p>
+            </div>
+            
+            <h4>Random Forests - Bagging + Feature Randomness</h4>
+            
+            <div class="math-block">
+                <p><strong>Core Idea:</strong> Train \(B\) trees on bootstrap samples with random feature subsets, then average predictions.</p>
+                
+                <p style="margin-top: 20px;"><strong>Algorithm:</strong></p>
+                <ol>
+                    <li><strong>Bootstrap sampling:</strong> For each tree \(b = 1, ..., B\):
+                        <ul>
+                            <li>Sample \(n\) examples with replacement from training set</li>
+                            <li>Creates diversity: each tree sees ~63.2% unique samples</li>
+                        </ul>
+                    </li>
+                    <li><strong>Random feature selection:</strong> At each split:
+                        <ul>
+                            <li>Randomly select \(m\) features from total \(d\) features</li>
+                            <li>Common: \(m = \sqrt{d}\) for classification, \(m = d/3\) for regression</li>
+                            <li>Find best split among these \(m\) features only</li>
+                        </ul>
+                    </li>
+                    <li><strong>Grow trees to full depth:</strong> No pruning (reduces bias)</li>
+                    <li><strong>Aggregate predictions:</strong>
+                        <ul>
+                            <li>Classification: Majority vote \(\hat{y} = \text{mode}\{\hat{y}_1, ..., \hat{y}_B\}\)</li>
+                            <li>Regression: Average \(\hat{y} = \frac{1}{B}\sum_{b=1}^B \hat{y}_b\)</li>
+                        </ul>
+                    </li>
+                </ol>
+                
+                <p style="margin-top: 20px;"><strong>Why It Works - Mathematical Insight:</strong></p>
+                <p>For regression, if trees are perfectly decorrelated and each has variance \(\sigma^2\):</p>
+                $$\text{Var}(\bar{Y}) = \frac{\sigma^2}{B}$$
+                
+                <p>In practice, trees are correlated with correlation \(\rho\):</p>
+                $$\text{Var}(\bar{Y}) = \rho\sigma^2 + \frac{1-\rho}{B}\sigma^2$$
+                
+                <p style="margin-top: 10px;">As \(B \to \infty\), variance approaches \(\rho\sigma^2\). Feature randomness reduces \(\rho\)!</p>
+            </div>
+            
+            <div class="code-block">
+<strong>Complete Random Forest Implementation</strong>
+
+<span style="color: #66d9ef;">import</span> numpy <span style="color: #66d9ef;">as</span> np
+<span style="color: #66d9ef;">from</span> collections <span style="color: #66d9ef;">import</span> Counter
+<span style="color: #66d9ef;">from</span> joblib <span style="color: #66d9ef;">import</span> Parallel, delayed
+
+<span style="color: #66d9ef;">class</span> <span style="color: #a6e22e;">RandomForestClassifier</span>:
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">__init__</span>(<span style="color: #f92672;">self</span>, n_estimators=<span style="color: #ae81ff;">100</span>, max_features=<span style="color: #e6db74;">'sqrt'</span>, 
+                 max_depth=<span style="color: #66d9ef;">None</span>, min_samples_split=<span style="color: #ae81ff;">2</span>,
+                 bootstrap=<span style="color: #66d9ef;">True</span>, n_jobs=-<span style="color: #ae81ff;">1</span>, random_state=<span style="color: #66d9ef;">None</span>):
+        <span style="color: #f92672;">self</span>.n_estimators = n_estimators
+        <span style="color: #f92672;">self</span>.max_features = max_features
+        <span style="color: #f92672;">self</span>.max_depth = max_depth
+        <span style="color: #f92672;">self</span>.min_samples_split = min_samples_split
+        <span style="color: #f92672;">self</span>.bootstrap = bootstrap
+        <span style="color: #f92672;">self</span>.n_jobs = n_jobs
+        <span style="color: #f92672;">self</span>.random_state = random_state
+        <span style="color: #f92672;">self</span>.trees = []
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">_get_max_features</span>(<span style="color: #f92672;">self</span>, n_features):
+        <span style="color: #f92672;">if</span> <span style="color: #f92672;">self</span>.max_features == <span style="color: #e6db74;">'sqrt'</span>:
+            <span style="color: #f92672;">return</span> int(np.sqrt(n_features))
+        <span style="color: #f92672;">elif</span> <span style="color: #f92672;">self</span>.max_features == <span style="color: #e6db74;">'log2'</span>:
+            <span style="color: #f92672;">return</span> int(np.log2(n_features))
+        <span style="color: #f92672;">elif</span> isinstance(<span style="color: #f92672;">self</span>.max_features, int):
+            <span style="color: #f92672;">return</span> <span style="color: #f92672;">self</span>.max_features
+        <span style="color: #f92672;">else</span>:
+            <span style="color: #f92672;">return</span> n_features
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">_bootstrap_sample</span>(<span style="color: #f92672;">self</span>, X, y, random_state):
+        <span style="color: #e6db74;">"""Generate bootstrap sample"""</span>
+        n_samples = X.shape[<span style="color: #ae81ff;">0</span>]
+        rng = np.random.RandomState(random_state)
+        indices = rng.choice(n_samples, n_samples, replace=<span style="color: #66d9ef;">True</span>)
+        <span style="color: #f92672;">return</span> X[indices], y[indices], indices
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">_fit_tree</span>(<span style="color: #f92672;">self</span>, X, y, tree_idx):
+        <span style="color: #e6db74;">"""Fit a single tree (for parallel execution)"""</span>
+        random_state = <span style="color: #66d9ef;">None</span> <span style="color: #f92672;">if</span> <span style="color: #f92672;">self</span>.random_state <span style="color: #f92672;">is</span> <span style="color: #66d9ef;">None</span> <span style="color: #f92672;">else</span> <span style="color: #f92672;">self</span>.random_state + tree_idx
+        
+        <span style="color: #75715e;"># Bootstrap sample</span>
+        <span style="color: #f92672;">if</span> <span style="color: #f92672;">self</span>.bootstrap:
+            X_sample, y_sample, _ = <span style="color: #f92672;">self</span>._bootstrap_sample(X, y, random_state)
+        <span style="color: #f92672;">else</span>:
+            X_sample, y_sample = X, y
+        
+        <span style="color: #75715e;"># Create and train tree with random feature selection</span>
+        tree = DecisionTreeClassifier(
+            max_depth=<span style="color: #f92672;">self</span>.max_depth,
+            min_samples_split=<span style="color: #f92672;">self</span>.min_samples_split,
+            max_features=<span style="color: #f92672;">self</span>._get_max_features(X.shape[<span style="color: #ae81ff;">1</span>]),
+            random_state=random_state
+        )
+        tree.fit(X_sample, y_sample)
+        
+        <span style="color: #f92672;">return</span> tree
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">fit</span>(<span style="color: #f92672;">self</span>, X, y):
+        <span style="color: #e6db74;">"""Fit the random forest"""</span>
+        <span style="color: #75715e;"># Parallel tree training</span>
+        <span style="color: #f92672;">self</span>.trees = Parallel(n_jobs=<span style="color: #f92672;">self</span>.n_jobs)(
+            delayed(<span style="color: #f92672;">self</span>._fit_tree)(X, y, i) 
+            <span style="color: #f92672;">for</span> i <span style="color: #f92672;">in</span> range(<span style="color: #f92672;">self</span>.n_estimators)
+        )
+        <span style="color: #f92672;">return</span> <span style="color: #f92672;">self</span>
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">predict</span>(<span style="color: #f92672;">self</span>, X):
+        <span style="color: #e6db74;">"""Predict by majority voting"""</span>
+        <span style="color: #75715e;"># Get predictions from all trees</span>
+        tree_predictions = np.array([tree.predict(X) <span style="color: #f92672;">for</span> tree <span style="color: #f92672;">in</span> <span style="color: #f92672;">self</span>.trees])
+        
+        <span style="color: #75715e;"># Majority vote for each sample</span>
+        predictions = []
+        <span style="color: #f92672;">for</span> i <span style="color: #f92672;">in</span> range(X.shape[<span style="color: #ae81ff;">0</span>]):
+            votes = Counter(tree_predictions[:, i])
+            predictions.append(votes.most_common(<span style="color: #ae81ff;">1</span>)[<span style="color: #ae81ff;">0</span>][<span style="color: #ae81ff;">0</span>])
+        
+        <span style="color: #f92672;">return</span> np.array(predictions)
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">predict_proba</span>(<span style="color: #f92672;">self</span>, X):
+        <span style="color: #e6db74;">"""Return probability estimates"""</span>
+        tree_predictions = np.array([tree.predict(X) <span style="color: #f92672;">for</span> tree <span style="color: #f92672;">in</span> <span style="color: #f92672;">self</span>.trees])
+        
+        <span style="color: #75715e;"># Calculate probability as proportion of votes</span>
+        n_samples = X.shape[<span style="color: #ae81ff;">0</span>]
+        n_classes = len(np.unique(tree_predictions))
+        probas = np.zeros((n_samples, n_classes))
+        
+        <span style="color: #f92672;">for</span> i <span style="color: #f92672;">in</span> range(n_samples):
+            votes = Counter(tree_predictions[:, i])
+            <span style="color: #f92672;">for</span> class_label, count <span style="color: #f92672;">in</span> votes.items():
+                probas[i, class_label] = count / <span style="color: #f92672;">self</span>.n_estimators
+        
+        <span style="color: #f92672;">return</span> probas
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">feature_importances_</span>(<span style="color: #f92672;">self</span>):
+        <span style="color: #e6db74;">"""Calculate feature importances (averaged across trees)"""</span>
+        importances = np.zeros(<span style="color: #f92672;">self</span>.trees[<span style="color: #ae81ff;">0</span>].n_features_)
+        
+        <span style="color: #f92672;">for</span> tree <span style="color: #f92672;">in</span> <span style="color: #f92672;">self</span>.trees:
+            importances += tree.feature_importances_
+        
+        <span style="color: #f92672;">return</span> importances / <span style="color: #f92672;">self</span>.n_estimators
+            </div>
+            
+            <h4>Out-of-Bag (OOB) Error Estimation</h4>
+            
+            <div class="math-block">
+                <p><strong>Key Insight:</strong> Each tree is trained on ~63.2% of data. The remaining ~36.8% (out-of-bag samples) provide a free validation set!</p>
+                
+                <p style="margin-top: 20px;"><strong>OOB Prediction for sample \(i\):</strong></p>
+                $$\hat{y}_i^{\text{OOB}} = \text{majority vote of trees where } i \notin \text{bootstrap sample}$$
+                
+                <p style="margin-top: 20px;"><strong>OOB Error:</strong></p>
+                $$\text{OOB Error} = \frac{1}{n}\sum_{i=1}^{n} \mathbb{1}(y_i \neq \hat{y}_i^{\text{OOB}})$$
+                
+                <p style="margin-top: 15px;">This estimates generalization error without need for separate validation set!</p>
+            </div>
+            
+            <h4>Gradient Boosted Decision Trees (GBDT)</h4>
+            
+            <div class="math-block">
+                <p><strong>Core Idea:</strong> Train trees <strong>sequentially</strong>, each correcting errors of previous ensemble.</p>
+                
+                <p style="margin-top: 20px;"><strong>Algorithm (for regression):</strong></p>
+                
+                <p><strong>Initialize:</strong></p>
+                $$F_0(x) = \arg\min_\gamma \sum_{i=1}^{n} L(y_i, \gamma)$$
+                <p>For squared loss: \(F_0(x) = \bar{y}\) (mean)</p>
+                
+                <p style="margin-top: 20px;"><strong>For \(m = 1\) to \(M\) (number of trees):</strong></p>
+                
+                <ol>
+                    <li><strong>Compute pseudo-residuals (negative gradient):</strong>
+                        $$r_{im} = -\left[\frac{\partial L(y_i, F(x_i))}{\partial F(x_i)}\right]_{F=F_{m-1}}$$
+                        
+                        For squared loss: \(r_{im} = y_i - F_{m-1}(x_i)\)
+                    </li>
+                    
+                    <li><strong>Fit tree \(h_m(x)\) to pseudo-residuals:</strong>
+                        $$h_m = \arg\min_h \sum_{i=1}^{n} (r_{im} - h(x_i))^2$$
+                    </li>
+                    
+                    <li><strong>Update ensemble:</strong>
+                        $$F_m(x) = F_{m-1}(x) + \nu \cdot h_m(x)$$
+                        
+                        where \(\nu\) is learning rate (shrinkage)
+                    </li>
+                </ol>
+                
+                <p style="margin-top: 20px;"><strong>Final model:</strong></p>
+                $$F(x) = F_0(x) + \nu\sum_{m=1}^{M} h_m(x)$$
+            </div>
+            
+            <h3>2. Oblique Decision Trees</h3>
+            
+            <div class="insight-box">
+                <h4>🔍 Beyond Axis-Aligned Splits</h4>
+                <p><strong>Problem:</strong> Standard trees use splits like \(x_j \leq \theta\). To approximate a diagonal boundary requires many axis-aligned splits.</p>
+                <p><strong>Solution:</strong> Use linear combinations: \(\mathbf{w}^T\mathbf{x} \leq \theta\)</p>
+            </div>
+            
+            <div class="math-block">
+                <p><strong>Oblique Split:</strong></p>
+                $$\sum_{j=1}^{d} w_j x_j \leq \theta$$
+                
+                <p style="margin-top: 20px;"><strong>Finding optimal \(\mathbf{w}\) and \(\theta\):</strong></p>
+                <p>This is an optimization problem. Common approaches:</p>
+                <ul>
+                    <li><strong>Linear Discriminant Analysis (LDA):</strong> Find linear combination that best separates classes</li>
+                    <li><strong>Simulated Annealing:</strong> Stochastic optimization</li>
+                    <li><strong>Gradient Descent:</strong> Optimize impurity w.r.t. weights (requires differentiable impurity)</li>
+                </ul>
+                
+                <p style="margin-top: 20px;"><strong>Trade-off:</strong></p>
+                <ul>
+                    <li><strong>Pro:</strong> More expressive, fewer splits needed</li>
+                    <li><strong>Con:</strong> Loss of interpretability, slower training, risk of overfitting</li>
+                </ul>
+            </div>
+            
+            <h3>3. Multi-output Decision Trees</h3>
+            
+            <div class="code-block">
+<strong>Multi-output Trees for Simultaneous Predictions</strong>
+
+<span style="color: #75715e;"># Example: Predict both species and size of an organism</span>
+<span style="color: #66d9ef;">from</span> sklearn.tree <span style="color: #66d9ef;">import</span> DecisionTreeClassifier
+<span style="color: #66d9ef;">from</span> sklearn.multioutput <span style="color: #66d9ef;">import</span> MultiOutputClassifier
+
+<span style="color: #75715e;"># y has shape (n_samples, n_outputs)</span>
+y_multi = np.column_stack([species, size_category])
+
+<span style="color: #75715e;"># Single tree that predicts both outputs</span>
+tree = DecisionTreeClassifier()
+tree.fit(X, y_multi)
+
+<span style="color: #75715e;"># Predictions are (n_samples, n_outputs)</span>
+predictions = tree.predict(X_test)
+            </div>
+            
+            <div class="math-block">
+                <p><strong>How it works:</strong></p>
+                <p>For multi-output, impurity is calculated across all outputs simultaneously:</p>
+                
+                <p style="margin-top: 15px;"><strong>Multi-output Gini:</strong></p>
+                $$\text{Gini}_{\text{multi}}(t) = \frac{1}{K}\sum_{k=1}^{K} \text{Gini}_k(t)$$
+                
+                <p>where \(K\) is number of output variables.</p>
+                
+                <p style="margin-top: 15px;"><strong>Use cases:</strong></p>
+                <ul>
+                    <li>Multi-label classification (sample can belong to multiple classes)</li>
+                    <li>Multi-task learning (predict multiple related targets)</li>
+                    <li>Structured output prediction</li>
+                </ul>
+            </div>
+            
+            <h2>Part 6: Production Engineering</h2>
+            
+            <h3>1. Model Serialization & Deployment</h3>
+            
+            <div class="code-block">
+<strong>Serialization Best Practices</strong>
+
+<span style="color: #66d9ef;">import</span> pickle
+<span style="color: #66d9ef;">import</span> joblib
+<span style="color: #66d9ef;">import</span> json
+<span style="color: #66d9ef;">from</span> sklearn.tree <span style="color: #66d9ef;">import</span> DecisionTreeClassifier
+
+<span style="color: #75715e;"># Train model</span>
+clf = DecisionTreeClassifier(max_depth=<span style="color: #ae81ff;">5</span>)
+clf.fit(X_train, y_train)
+
+<span style="color: #75715e;"># Method 1: Pickle (Python-specific)</span>
+<span style="color: #f92672;">with</span> open(<span style="color: #e6db74;">'model.pkl'</span>, <span style="color: #e6db74;">'wb'</span>) <span style="color: #f92672;">as</span> f:
+    pickle.dump(clf, f)
+
+<span style="color: #75715e;"># Method 2: Joblib (more efficient for large numpy arrays)</span>
+joblib.dump(clf, <span style="color: #e6db74;">'model.joblib'</span>, compress=<span style="color: #ae81ff;">3</span>)
+
+<span style="color: #75715e;"># Method 3: Custom JSON (for cross-language compatibility)</span>
+<span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">tree_to_json</span>(tree):
+    <span style="color: #e6db74;">"""Convert decision tree to JSON format"""</span>
+    tree_dict = {
+        <span style="color: #e6db74;">'n_features'</span>: tree.n_features_,
+        <span style="color: #e6db74;">'n_classes'</span>: tree.n_classes_,
+        <span style="color: #e6db74;">'max_depth'</span>: tree.max_depth,
+        <span style="color: #e6db74;">'tree_structure'</span>: {
+            <span style="color: #e6db74;">'features'</span>: tree.tree_.feature.tolist(),
+            <span style="color: #e6db74;">'thresholds'</span>: tree.tree_.threshold.tolist(),
+            <span style="color: #e6db74;">'children_left'</span>: tree.tree_.children_left.tolist(),
+            <span style="color: #e6db74;">'children_right'</span>: tree.tree_.children_right.tolist(),
+            <span style="color: #e6db74;">'values'</span>: tree.tree_.value.tolist()
+        }
+    }
+    <span style="color: #f92672;">return</span> json.dumps(tree_dict)
+
+json_model = tree_to_json(clf)
+
+<span style="color: #75715e;"># Save metadata alongside model</span>
+metadata = {
+    <span style="color: #e6db74;">'model_version'</span>: <span style="color: #e6db74;">'1.0.0'</span>,
+    <span style="color: #e6db74;">'training_date'</span>: <span style="color: #e6db74;">'2024-01-15'</span>,
+    <span style="color: #e6db74;">'feature_names'</span>: feature_names,
+    <span style="color: #e6db74;">'class_names'</span>: class_names,
+    <span style="color: #e6db74;">'hyperparameters'</span>: {
+        <span style="color: #e6db74;">'max_depth'</span>: <span style="color: #ae81ff;">5</span>,
+        <span style="color: #e6db74;">'min_samples_split'</span>: <span style="color: #ae81ff;">10</span>
+    },
+    <span style="color: #e6db74;">'metrics'</span>: {
+        <span style="color: #e6db74;">'train_accuracy'</span>: <span style="color: #ae81ff;">0.95</span>,
+        <span style="color: #e6db74;">'val_accuracy'</span>: <span style="color: #ae81ff;">0.87</span>
+    }
+}
+joblib.dump(metadata, <span style="color: #e6db74;">'model_metadata.joblib'</span>)
+            </div>
+            
+            <h3>2. Inference Optimization</h3>
+            
+            <div class="code-block">
+<strong>Optimizing Tree Traversal</strong>
+
+<span style="color: #66d9ef;">class</span> <span style="color: #a6e22e;">OptimizedTree</span>:
+    <span style="color: #e6db74;">"""Optimized tree for fast inference"""</span>
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">__init__</span>(<span style="color: #f92672;">self</span>, sklearn_tree):
+        <span style="color: #75715e;"># Pre-process tree structure for faster lookup</span>
+        <span style="color: #f92672;">self</span>.features = sklearn_tree.tree_.feature
+        <span style="color: #f92672;">self</span>.thresholds = sklearn_tree.tree_.threshold
+        <span style="color: #f92672;">self</span>.left = sklearn_tree.tree_.children_left
+        <span style="color: #f92672;">self</span>.right = sklearn_tree.tree_.children_right
+        <span style="color: #f92672;">self</span>.values = sklearn_tree.tree_.value
+        
+        <span style="color: #75715e;"># Cache leaf predictions</span>
+        <span style="color: #f92672;">self</span>.predictions = np.argmax(<span style="color: #f92672;">self</span>.values.squeeze(), axis=<span style="color: #ae81ff;">1</span>)
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">predict_single</span>(<span style="color: #f92672;">self</span>, x):
+        <span style="color: #e6db74;">"""Optimized prediction for single sample"""</span>
+        node = <span style="color: #ae81ff;">0</span>  <span style="color: #75715e;"># Start at root</span>
+        
+        <span style="color: #f92672;">while</span> <span style="color: #f92672;">self</span>.left[node] != -<span style="color: #ae81ff;">1</span>:  <span style="color: #75715e;"># Not a leaf</span>
+            feature = <span style="color: #f92672;">self</span>.features[node]
+            threshold = <span style="color: #f92672;">self</span>.thresholds[node]
+            
+            <span style="color: #f92672;">if</span> x[feature] <= threshold:
+                node = <span style="color: #f92672;">self</span>.left[node]
+            <span style="color: #f92672;">else</span>:
+                node = <span style="color: #f92672;">self</span>.right[node]
+        
+        <span style="color: #f92672;">return</span> <span style="color: #f92672;">self</span>.predictions[node]
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">predict_batch</span>(<span style="color: #f92672;">self</span>, X):
+        <span style="color: #e6db74;">"""Vectorized batch prediction"""</span>
+        n_samples = X.shape[<span style="color: #ae81ff;">0</span>]
+        predictions = np.zeros(n_samples, dtype=np.int32)
+        nodes = np.zeros(n_samples, dtype=np.int32)  <span style="color: #75715e;"># All start at root</span>
+        
+        <span style="color: #75715e;"># Track which samples are still traversing</span>
+        active = np.ones(n_samples, dtype=bool)
+        
+        <span style="color: #f92672;">while</span> active.any():
+            <span style="color: #75715e;"># Get features and thresholds for current nodes</span>
+            features = <span style="color: #f92672;">self</span>.features[nodes[active]]
+            thresholds = <span style="color: #f92672;">self</span>.thresholds[nodes[active]]
+            
+            <span style="color: #75715e;"># Evaluate splits</span>
+            active_X = X[active]
+            comparisons = active_X[np.arange(active_X.shape[<span style="color: #ae81ff;">0</span>]), features] <= thresholds
+            
+            <span style="color: #75715e;"># Update nodes</span>
+            nodes_active = nodes[active]
+            nodes_active[comparisons] = <span style="color: #f92672;">self</span>.left[nodes_active[comparisons]]
+            nodes_active[~comparisons] = <span style="color: #f92672;">self</span>.right[nodes_active[~comparisons]]
+            nodes[active] = nodes_active
+            
+            <span style="color: #75715e;"># Check which samples reached leaves</span>
+            at_leaf = <span style="color: #f92672;">self</span>.left[nodes] == -<span style="color: #ae81ff;">1</span>
+            active &= ~at_leaf
+        
+        <span style="color: #f92672;">return</span> <span style="color: #f92672;">self</span>.predictions[nodes]
+
+<span style="color: #75715e;"># Benchmark</span>
+<span style="color: #66d9ef;">import</span> time
+
+optimized = OptimizedTree(clf)
+
+start = time.time()
+<span style="color: #f92672;">for</span> _ <span style="color: #f92672;">in</span> range(<span style="color: #ae81ff;">1000</span>):
+    predictions = optimized.predict_batch(X_test)
+print(<span style="color: #e6db74;">f"Optimized: </span><span style="color: #e6db74;">{</span>time<span style="color: #f92672;">.</span>time() <span style="color: #f92672;">-</span> start<span style="color: #e6db74;">:</span><span style="color: #e6db74;">.4f</span><span style="color: #e6db74;">}</span><span style="color: #e6db74;">s"</span>)
+            </div>
+            
+            <h3>3. Model Monitoring & Drift Detection</h3>
+            
+            <div class="code-block">
+<strong>Production Monitoring System</strong>
+
+<span style="color: #66d9ef;">import</span> pandas <span style="color: #66d9ef;">as</span> pd
+<span style="color: #66d9ef;">from</span> scipy.stats <span style="color: #66d9ef;">import</span> ks_2samp
+<span style="color: #66d9ef;">from</span> scipy.spatial.distance <span style="color: #66d9ef;">import</span> jensenshannon
+
+<span style="color: #66d9ef;">class</span> <span style="color: #a6e22e;">ModelMonitor</span>:
+    <span style="color: #e6db74;">"""Monitor model performance and data drift"""</span>
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">__init__</span>(<span style="color: #f92672;">self</span>, model, X_train, y_train):
+        <span style="color: #f92672;">self</span>.model = model
+        <span style="color: #f92672;">self</span>.X_train = X_train
+        <span style="color: #f92672;">self</span>.y_train = y_train
+        
+        <span style="color: #75715e;"># Calculate baseline metrics</span>
+        <span style="color: #f92672;">self</span>.baseline_accuracy = model.score(X_train, y_train)
+        <span style="color: #f92672;">self</span>.baseline_predictions = model.predict(X_train)
+        <span style="color: #f92672;">self</span>.feature_distributions = {}
+        
+        <span style="color: #f92672;">for</span> i <span style="color: #f92672;">in</span> range(X_train.shape[<span style="color: #ae81ff;">1</span>]):
+            <span style="color: #f92672;">self</span>.feature_distributions[i] = X_train[:, i]
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">detect_data_drift</span>(<span style="color: #f92672;">self</span>, X_new, threshold=<span style="color: #ae81ff;">0.05</span>):
+        <span style="color: #e6db74;">"""Detect if new data distribution has drifted"""</span>
+        drift_detected = {}
+        
+        <span style="color: #f92672;">for</span> i <span style="color: #f92672;">in</span> range(X_new.shape[<span style="color: #ae81ff;">1</span>]):
+            <span style="color: #75715e;"># Kolmogorov-Smirnov test</span>
+            statistic, p_value = ks_2samp(
+                <span style="color: #f92672;">self</span>.feature_distributions[i],
+                X_new[:, i]
+            )
+            
+            drift_detected[<span style="color: #e6db74;">f'feature_</span><span style="color: #e6db74;">{</span>i<span style="color: #e6db74;">}</span><span style="color: #e6db74;">'</span>] = {
+                <span style="color: #e6db74;">'p_value'</span>: p_value,
+                <span style="color: #e6db74;">'drifted'</span>: p_value < threshold,
+                <span style="color: #e6db74;">'statistic'</span>: statistic
+            }
+        
+        <span style="color: #f92672;">return</span> drift_detected
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">detect_prediction_drift</span>(<span style="color: #f92672;">self</span>, X_new, threshold=<span style="color: #ae81ff;">0.05</span>):
+        <span style="color: #e6db74;">"""Detect if prediction distribution has changed"""</span>
+        new_predictions = <span style="color: #f92672;">self</span>.model.predict(X_new)
+        
+        <span style="color: #75715e;"># Compare class distributions</span>
+        baseline_dist = np.bincount(<span style="color: #f92672;">self</span>.baseline_predictions) / len(<span style="color: #f92672;">self</span>.baseline_predictions)
+        new_dist = np.bincount(new_predictions, minlength=len(baseline_dist)) / len(new_predictions)
+        
+        <span style="color: #75715e;"># Jensen-Shannon divergence</span>
+        js_div = jensenshannon(baseline_dist, new_dist)
+        
+        <span style="color: #f92672;">return</span> {
+            <span style="color: #e6db74;">'js_divergence'</span>: js_div,
+            <span style="color: #e6db74;">'drifted'</span>: js_div > threshold,
+            <span style="color: #e6db74;">'baseline_dist'</span>: baseline_dist,
+            <span style="color: #e6db74;">'current_dist'</span>: new_dist
+        }
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">performance_report</span>(<span style="color: #f92672;">self</span>, X_new, y_new):
+        <span style="color: #e6db74;">"""Generate comprehensive monitoring report"""</span>
+        report = {
+            <span style="color: #e6db74;">'timestamp'</span>: pd.Timestamp.now(),
+            <span style="color: #e6db74;">'samples'</span>: len(X_new),
+            <span style="color: #e6db74;">'current_accuracy'</span>: <span style="color: #f92672;">self</span>.model.score(X_new, y_new),
+            <span style="color: #e6db74;">'baseline_accuracy'</span>: <span style="color: #f92672;">self</span>.baseline_accuracy,
+            <span style="color: #e6db74;">'data_drift'</span>: <span style="color: #f92672;">self</span>.detect_data_drift(X_new),
+            <span style="color: #e6db74;">'prediction_drift'</span>: <span style="color: #f92672;">self</span>.detect_prediction_drift(X_new)
+        }
+        
+        <span style="color: #75715e;"># Alert if significant degradation</span>
+        accuracy_drop = <span style="color: #f92672;">self</span>.baseline_accuracy - report[<span style="color: #e6db74;">'current_accuracy'</span>]
+        <span style="color: #f92672;">if</span> accuracy_drop > <span style="color: #ae81ff;">0.05</span>:
+            report[<span style="color: #e6db74;">'alert'</span>] = <span style="color: #e6db74;">'PERFORMANCE_DEGRADATION'</span>
+        
+        <span style="color: #f92672;">return</span> report
+
+<span style="color: #75715e;"># Usage in production</span>
+monitor = ModelMonitor(clf, X_train, y_train)
+
+<span style="color: #75715e;"># Weekly monitoring</span>
+report = monitor.performance_report(X_production, y_production)
+<span style="color: #f92672;">if</span> <span style="color: #e6db74;">'alert'</span> <span style="color: #f92672;">in</span> report:
+    send_alert(report)  <span style="color: #75715e;"># Trigger retraining pipeline</span>
+            </div>
+            
+            <h3>4. A/B Testing Decision Trees</h3>
+            
+            <div class="example-card">
+                <h4>Rigorous A/B Testing Framework</h4>
+                
+                <div class="code-block">
+<span style="color: #66d9ef;">from</span> scipy.stats <span style="color: #66d9ef;">import</span> chi2_contingency, ttest_ind
+<span style="color: #66d9ef;">import</span> numpy <span style="color: #66d9ef;">as</span> np
+
+<span style="color: #66d9ef;">class</span> <span style="color: #a6e22e;">ABTest</span>:
+    <span style="color: #e6db74;">"""A/B test for comparing two models"""</span>
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">__init__</span>(<span style="color: #f92672;">self</span>, model_a, model_b, alpha=<span style="color: #ae81ff;">0.05</span>):
+        <span style="color: #f92672;">self</span>.model_a = model_a
+        <span style="color: #f92672;">self</span>.model_b = model_b
+        <span style="color: #f92672;">self</span>.alpha = alpha
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">accuracy_test</span>(<span style="color: #f92672;">self</span>, X_test, y_test):
+        <span style="color: #e6db74;">"""Statistical test for accuracy difference"""</span>
+        <span style="color: #75715e;"># Get predictions</span>
+        pred_a = <span style="color: #f92672;">self</span>.model_a.predict(X_test)
+        pred_b = <span style="color: #f92672;">self</span>.model_b.predict(X_test)
+        
+        <span style="color: #75715e;"># Calculate accuracies</span>
+        acc_a = (pred_a == y_test).astype(int)
+        acc_b = (pred_b == y_test).astype(int)
+        
+        <span style="color: #75715e;"># Paired t-test (samples are paired - same test set)</span>
+        statistic, p_value = ttest_ind(acc_a, acc_b)
+        
+        <span style="color: #f92672;">return</span> {
+            <span style="color: #e6db74;">'model_a_accuracy'</span>: acc_a.mean(),
+            <span style="color: #e6db74;">'model_b_accuracy'</span>: acc_b.mean(),
+            <span style="color: #e6db74;">'difference'</span>: acc_b.mean() - acc_a.mean(),
+            <span style="color: #e6db74;">'p_value'</span>: p_value,
+            <span style="color: #e6db74;">'significant'</span>: p_value < <span style="color: #f92672;">self</span>.alpha,
+            <span style="color: #e6db74;">'winner'</span>: <span style="color: #e6db74;">'B'</span> <span style="color: #f92672;">if</span> acc_b.mean() > acc_a.mean() <span style="color: #f92672;">and</span> p_value < <span style="color: #f92672;">self</span>.alpha <span style="color: #f92672;">else</span> <span style="color: #e6db74;">'A'</span>
+        }
+    
+    <span style="color: #66d9ef;">def</span> <span style="color: #a6e22e;">required_sample_size</span>(<span style="color: #f92672;">self</span>, baseline_acc, min_detectable_effect, power=<span style="color: #ae81ff;">0.8</span>):
+        <span style="color: #e6db74;">"""Calculate required sample size for test"""</span>
+        <span style="color: #75715e;"># Simplified calculation (use statsmodels for precise version)</span>
+        z_alpha = <span style="color: #ae81ff;">1.96</span>  <span style="color: #75715e;"># 95% confidence</span>
+        z_beta = <span style="color: #ae81ff;">0.84</span>   <span style="color: #75715e;"># 80% power</span>
+        
+        p1 = baseline_acc
+        p2 = baseline_acc + min_detectable_effect
+        p_pooled = (p1 + p2) / <span style="color: #ae81ff;">2</span>
+        
+        n = (<span style="color: #ae81ff;">2</span> * (z_alpha + z_beta)**<span style="color: #ae81ff;">2</span> * p_pooled * (<span style="color: #ae81ff;">1</span> - p_pooled)) / (p2 - p1)**<span style="color: #ae81ff;">2</span>
+        
+        <span style="color: #f92672;">return</span> int(np.ceil(n))
+
+<span style="color: #75715e;"># Example usage</span>
+ab_test = ABTest(model_current, model_new)
+result = ab_test.accuracy_test(X_test, y_test)
+
+<span style="color: #f92672;">if</span> result[<span style="color: #e6db74;">'significant'</span>]:
+    print(<span style="color: #e6db74;">f"Winner: Model </span><span style="color: #e6db74;">{</span>result[<span style="color: #e6db74;">'winner'</span>]<span style="color: #e6db74;">}</span><span style="color: #e6db74;"> with p-value </span><span style="color: #e6db74;">{</span>result[<span style="color: #e6db74;">'p_value'</span>]<span style="color: #e6db74;">:</span><span style="color: #e6db74;">.4f</span><span style="color: #e6db74;">}</span><span style="color: #e6db74;">"</span>)
+                </div>
+            </div>
+            
+            <h2>Part 7: Research Frontiers</h2>
+            
+            <h3>1. Neural Decision Trees</h3>
+            
+            <div class="insight-box">
+                <h4>🔬 Merging Trees with Deep Learning</h4>
+                <p><strong>Idea:</strong> Make decision trees differentiable so they can be trained with gradient descent and integrated into neural networks.</p>
+            </div>
+            
+            <div class="math-block">
+                <p><strong>Soft Decision Trees (Frosst & Hinton, 2017)</strong></p>
+                
+                <p>Replace hard splits with soft probabilistic splits:</p>
+                
+                <p style="margin-top: 15px;"><strong>Hard split:</strong></p>
+                $$\mathbb{1}(\mathbf{w}^T\mathbf{x} \leq \theta)$$
+                
+                <p style="margin-top: 15px;"><strong>Soft split (sigmoid):</strong></p>
+                $$\sigma(\mathbf{w}^T\mathbf{x} + b) = \frac{1}{1 + e^{-(\mathbf{w}^T\mathbf{x} + b)}}$$
+                
+                <p style="margin-top: 20px;"><strong>Path probability to leaf \(\ell\):</strong></p>
+                $$p(\ell|\mathbf{x}) = \prod_{n \in \text{path}(\ell)} p_n(\mathbf{x})$$
+                
+                <p>where \(p_n(\mathbf{x})\) is the probability of going left/right at node \(n\).</p>
+                
+                <p style="margin-top: 20px;"><strong>Final prediction:</strong></p>
+                $$\hat{y} = \sum_{\ell \in \text{leaves}} p(\ell|\mathbf{x}) \cdot \text{prediction}(\ell)$$
+                
+                <p style="margin-top: 15px;">This is fully differentiable! Train with backpropagation.</p>
+            </div>
+            
+            <h3>2. Interpretability Research</h3>
+            
+            <div class="comparison-grid">
+                <div class="comparison-card">
+                    <h4>SHAP for Trees</h4>
+                    <p>TreeSHAP provides exact Shapley values in polynomial time for tree-based models.</p>
+                    <p><strong>Key insight:</strong> Exploits tree structure to avoid exponential computation.</p>
+                </div>
+                
+                <div class="comparison-card">
+                    <h4>Counterfactual Explanations</h4>
+                    <p>"What minimal change to input would change the prediction?"</p>
+                    <p><strong>Use case:</strong> Loan denial → "Increase income by $5K to be approved"</p>
+                </div>
+                
+                <div class="comparison-card">
+                    <h4>Anchors</h4>
+                    <p>Find sufficient conditions for a prediction: "IF age > 30 AND income > 50K THEN predict approved"</p>
+                </div>
+            </div>
+            
+            <h3>3. Advanced Splitting Criteria</h3>
+            
+            <div class="math-block">
+                <p><strong>Information Gain Ratio (C4.5):</strong></p>
+                $$\text{GainRatio} = \frac{\text{IG}}{\text{SplitInfo}}$$
+                
+                <p style="margin-top: 20px;"><strong>Distance-based Splitting:</strong></p>
+                <p>For imbalanced data, maximize distance between class centroids:</p>
+                $$\max_{\text{split}} ||\mu_{\text{left}}^{(+)} - \mu_{\text{right}}^{(-)}||^2$$
+                
+                <p style="margin-top: 20px;"><strong>DKM (Distance, Kernel, Mahalanobis):</strong></p>
+                <p>Use kernel methods to find non-linear decision boundaries while maintaining tree structure.</p>
+            </div>
+            
+            <h3>4. Future Directions</h3>
+            
+            <div class="example-card">
+                <h4>Cutting-Edge Research Areas</h4>
+                
+                <ul>
+                    <li><strong>Federated Learning with Trees:</strong> Train decision trees on distributed data without sharing raw data</li>
+                    <li><strong>Quantum Decision Trees:</strong> Leverage quantum computing for exponential speedup in tree construction</li>
+                    <li><strong>Causal Decision Trees:</strong> Learn trees that capture causal relationships, not just correlations</li>
+                    <li><strong>Online/Streaming Trees:</strong> Update trees incrementally as new data arrives</li>
+                    <li><strong>Fairness-aware Trees:</strong> Incorporate fairness constraints (demographic parity, equalized odds) into splitting criteria</li>
+                    <li><strong>AutoML for Trees:</strong> Automated hyperparameter optimization and architecture search</li>
+                </ul>
+            </div>
+            
+            <div class="success-box">
+                <h4>✅ You Now Have Production-Ready Knowledge!</h4>
+                <p>You can now:</p>
+                <ul>
+                    <li>Understand decision trees at the mathematical and algorithmic level</li>
+                    <li>Implement trees from scratch with optimizations</li>
+                    <li>Deploy trees in production with proper monitoring</li>
+                    <li>Debug tree behavior and interpret predictions</li>
+                    <li>Stay current with research developments</li>
+                    <li>Make informed decisions about when to use trees vs other models</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
