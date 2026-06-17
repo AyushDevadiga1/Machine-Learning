@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="130" viewBox="0 0 800 130">
+  <defs>
+    <style>
+      .bg { fill: #0d1117; }
+      .t1 { fill: #e6edf3; font-family: 'Courier New', Courier, monospace; font-size: 12px; }
+      .t2 { fill: #8b949e; font-family: 'Courier New', Courier, monospace; font-size: 12px; }
+      .t3 { fill: #3c3c3c; font-family: 'Courier New', Courier, monospace; font-size: 10px; }
+      .r1 { animation: fwd 18s linear infinite; }
+      .r2 { animation: rev 20s linear infinite; }
+      .r3 { animation: fwd 16s linear infinite; }
+      .r4 { animation: rev 22s linear infinite; }
+      .r5 { animation: fwd 19s linear infinite; }
+      .r6 { animation: rev 17s linear infinite; }
+      .r7 { animation: fwd 21s linear infinite; }
+      @keyframes fwd { from { transform: translateX(0); }    to { transform: translateX(-50%); } }
+      @keyframes rev { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+    </style>
+    <linearGradient id="fl" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#0d1117" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#0d1117" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="fr" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#0d1117" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#0d1117" stop-opacity="1"/>
+    </linearGradient>
+    <clipPath id="clip"><rect x="0" y="0" width="800" height="130"/></clipPath>
+  </defs>
+
+  <rect class="bg" width="800" height="130"/>
+
+  <g clip-path="url(#clip)">
+
+    <g class="r1">
+      <text class="t1" y="18">  __  __    _    ____ _   _ ___ _   _ _____   _     _____    _    ____  _   _ ___ _   _  ____    __  __    _    ____ _   _ ___ _   _ _____   _     _____    _    ____  _   _ ___ _   _  ____  </text>
+    </g>
+
+    <g class="r2">
+      <text class="t2" y="33"> |  \/  |  / \  / ___| | | |_ _| \ | | ____| | |   | ____|  / \  |  _ \| \ | |_ _| \ | |/ ___|  |  \/  |  / \  / ___| | | |_ _| \ | | ____| | |   | ____|  / \  |  _ \| \ | |_ _| \ | |/ ___| </text>
+    </g>
+
+    <g class="r3">
+      <text class="t1" y="48"> | |\/| | / _ \| |   | |_| || ||  \| |  _|   | |   |  _|   / _ \ | |_) |  \| || ||  \| | |  _    | |\/| | / _ \| |   | |_| || ||  \| |  _|   | |   |  _|   / _ \ | |_) |  \| || ||  \| | |  _   </text>
+    </g>
+
+    <g class="r4">
+      <text class="t2" y="63"> | |  | |/ ___ \ |___| |  | || |\  | |___   | |___| |___ / ___ \|  _ \| |\  || || |\  | | |___ | | |  | |/ ___ \ |___| |  | || |\  | |___   | |___| |___ / ___ \|  _ \| |\  || || |\  | | |___ |</text>
+    </g>
+
+    <g class="r5">
+      <text class="t1" y="78"> |_|  |_/_/   \_\____|_|  |___|_| \_|_____| |_____|_____/_/   \_\_| \_\_| \_|___|_| \_|_____|  |_|  |_/_/   \_\____|_|  |___|_| \_|_____| |_____|_____/_/   \_\_| \_\_| \_|___|_| \_|_____|  </text>
+    </g>
+
+    <g class="r6">
+      <text class="t2" y="97">  . . .  built from scratch . one algorithm at a time . gradient descent . xgboost . neural nets . clustering . regression . ensembles  . . .  built from scratch . one algorithm at a time . gradient descent . xgboost . neural nets . clustering . regression . ensembles  . . . </text>
+    </g>
+
+    <g class="r7">
+      <text class="t3" y="115">  -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --  </text>
+    </g>
+
+  </g>
+
+  <rect fill="url(#fl)" x="0"   y="0" width="80"  height="130"/>
+  <rect fill="url(#fr)" x="720" y="0" width="80"  height="130"/>
+
+</svg>

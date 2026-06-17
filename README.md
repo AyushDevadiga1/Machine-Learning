@@ -1,20 +1,13 @@
 <div align="center">
 
-```
-███╗   ███╗██╗              ██╗ ██████╗ ██╗   ██╗██████╗ ███╗   ██╗███████╗██╗   ██╗
-████╗ ████║██║              ██║██╔═══██╗██║   ██║██╔══██╗████╗  ██║██╔════╝╚██╗ ██╔╝
-██╔████╔██║██║              ██║██║   ██║██║   ██║██████╔╝██╔██╗ ██║█████╗   ╚████╔╝
-██║╚██╔╝██║██║         ██   ██║██║   ██║██║   ██║██╔══██╗██║╚██╗██║██╔══╝    ╚██╔╝
-██║ ╚═╝ ██║███████╗    ╚█████╔╝╚██████╔╝╚██████╔╝██║  ██║██║ ╚████║███████╗   ██║
-╚═╝     ╚═╝╚══════╝     ╚════╝  ╚═════╝  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝╚══════╝   ╚═╝
-```
+<img src="./assets/banner.svg" alt="ML Journey Banner" width="100%"/>
 
 ### *A living ML lab — built from scratch, one algorithm at a time.*
 
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![Jupyter](https://img.shields.io/badge/Jupyter-Notebooks-F37626?style=for-the-badge&logo=jupyter&logoColor=white)](https://jupyter.org)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-1.8-F7931E?style=for-the-badge&logo=scikitlearn&logoColor=white)](https://scikit-learn.org)
-[![XGBoost](https://img.shields.io/badge/XGBoost-3.1-189AB4?style=for-the-badge)](https://xgboost.readthedocs.io)
+[![XGBoost](https://img.shields.io/badge/XGBoost-3.1-FF6600?style=for-the-badge&logo=xgboost&logoColor=white)](https://xgboost.readthedocs.io)
 [![TensorFlow](https://img.shields.io/badge/TensorFlow-2.21-FF6F00?style=for-the-badge&logo=tensorflow&logoColor=white)](https://tensorflow.org)
 
 </div>
@@ -63,7 +56,7 @@ From hand-rolling gradient descent with NumPy to building production-style ensem
 |--------|--------------|
 | [`random-forest/`](./random-forest) | Bagging trees, feature importance, OOB error |
 | [`gradient-boosting/`](./gradient-boosting) | Boosting from first principles |
-| [`xgbclassifier/`](./xgbclassifier) | XGBoost deep-dives, hyperparameter tuning |
+| [`xgbclassifier/`](./xgbclassifier) | XGBoost deep-dives — classification, regression, hyperparameter tuning |
 | [`Adaboost/`](./Adaboost) | Adaptive boosting, weak learner composition |
 | [`bagging-ensemble/`](./bagging-ensemble) | Bagging theory and variance reduction |
 | [`voting-ensemble/`](./voting-ensemble) | Hard and soft voting strategies |
@@ -165,6 +158,7 @@ jupyter notebook
 
 ```
 ML/
+├── assets/                     Banner SVG and visual assets
 ├── Adaboost/                   Adaptive boosting
 ├── bagging-ensemble/           Variance reduction via bagging
 ├── books_and_research_papers/  Reference material
@@ -210,8 +204,8 @@ ML/
 
 **Built with curiosity. Documented with intent.**
 
-[![GitHub](https://img.shields.io/badge/GitHub-AyushDevadiga1-181717?style=for-the-badge&logo=github)](https://github.com/AyushDevadiga1)
-[![Kaggle](https://img.shields.io/badge/Kaggle-ayushdevadiga-20BEFF?style=for-the-badge&logo=kaggle&logoColor=white)](https://kaggle.com/ayushdevadiga)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-ayush--devadiga--aiml-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/ayush-devadiga-aiml)
+[![GitHub](https://img.shields.io/badge/GitHub-AyushDevadiga1-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/AyushDevadiga1)
+[![Kaggle](https://img.shields.io/badge/Kaggle-ayushdevadiga-20BEFF?style=for-the-badge&logo=kaggle&logoColor=white)](https://www.kaggle.com/ayushdevadiga)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-ayush--devadiga--aiml-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/ayush-devadiga-aiml)
 
 </div>
