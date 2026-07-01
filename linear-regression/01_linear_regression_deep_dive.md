@@ -1,0 +1,244 @@
+# Linear Regression — Deep Dive Notes (Part 1)
+
+> **Where this fits:** This is Stage 1 of an end-to-end mastery track on Linear Regression — "the mother of all ML algorithms." Everything here was *derived*, not memorized, using a Socratic back-and-forth. Treat this as the reference doc to revisit, not the primary learning method — the understanding happened in the derivation, this is just the crystallized trail.
+
+---
+
+## The Roadmap (full picture)
+
+```mermaid
+flowchart TD
+    A["1. Problem Setup<br/>y ≈ weighted sum of features"] --> B["2. Defining 'Best Fit'<br/>turning intuition into a loss function"]
+    B --> C["3. Why NOT sum of raw errors<br/>positive/negative cancellation"]
+    C --> D["4. MAE vs MSE<br/>the differentiability argument"]
+    D --> E["5. The deeper 'why'<br/>MLE + Gaussian noise → squared error"]
+    E --> F["6. Deriving the Normal Equation<br/>closed-form solution via matrix calculus"]
+    F --> G["7. Why it breaks down<br/>invertibility + O(p³) cost"]
+    G -.->|"next stage"| H["8. Gradient Descent"]
+    H -.-> I["9. Assumptions of Linear Regression<br/>+ diagnostic tests"]
+    I -.-> J["10. Bias-Variance & Regularization<br/>(Ridge / Lasso)"]
+
+    style A fill:#e8f4fd,stroke:#333
+    style B fill:#e8f4fd,stroke:#333
+    style C fill:#e8f4fd,stroke:#333
+    style D fill:#e8f4fd,stroke:#333
+    style E fill:#fff3cd,stroke:#333
+    style F fill:#d4edda,stroke:#333
+    style G fill:#d4edda,stroke:#333
+    style H fill:#f0f0f0,stroke:#999,stroke-dasharray: 5 5
+    style I fill:#f0f0f0,stroke:#999,stroke-dasharray: 5 5
+    style J fill:#f0f0f0,stroke:#999,stroke-dasharray: 5 5
+```
+
+**Covered in this document:** Stages 1–7 (solid boxes above).
+**Not yet covered:** Gradient Descent, Assumptions + diagnostic tests, Bias-Variance & Regularization (dashed boxes — coming next).
+
+---
+
+## Stage 1 — What Problem Is Linear Regression Solving?
+
+You have examples. Each has **input features** $x_1, x_2, \dots$ and a **target** $y$. The core belief (an *assumption*, not a fact) is that the target is approximately a **weighted sum of the inputs**, plus noise:
+
+$$y \approx w_1 x_1 + w_2 x_2 + \dots + w_n x_n + b$$
+
+Linear Regression is the algorithm that finds the best $w_1, \dots, w_n, b$ given data. Two questions immediately follow:
+
+1. Why would reality behave like a weighted sum at all?
+2. What does "best" even mean — best by what criterion?
+
+Question 2 is what the rest of this document answers.
+
+---
+
+## Stage 2 — From Intuition to a Loss Function
+
+**Starting intuition:** the best line is the one "closest to all points at the same time." This is a *goal*, not yet *math* — a line can hug three points and be far from two others, so we need a single number that scores "how good is this line, overall."
+
+For a candidate line $\hat{y} = wx + b$, each point has an error:
+
+$$e_i = y_i - \hat{y}_i = y_i - (wx_i + b)$$
+
+### First attempt: sum of raw errors — and why it fails
+
+Try summing the $e_i$ directly. Counter-example: two points at $x=1, x=2$, both with true $y=5$. A bad, slanted line predicts $\hat y = 7$ at $x=1$ and $\hat y = 3$ at $x=2$.
+
+$$e_1 = 5-7=-2, \qquad e_2 = 5-3=+2, \qquad e_1+e_2 = 0$$
+
+The **perfect** line (flat at $y=5$) also gives a sum of $0$. Two wildly different lines score identically — **positive and negative errors cancel**, like two people pushing a box from opposite sides with zero net force despite both straining hard. Sum of raw errors is a broken scorecard.
+
+### Fixing the cancellation: two candidates
+
+To stop errors from cancelling, apply an operation to each $e_i$ *before* summing that ignores sign:
+
+- **Mean Absolute Error (MAE):** sum of $|e_i|$
+- **Mean Squared Error (MSE):** sum of $e_i^2$
+
+### Why MSE, not MAE — Reason 1: Differentiability
+
+Both closed-form (Normal Equation) and iterative (Gradient Descent) solutions rely on **derivatives** to find the minimum — the bottom of a valley has zero slope.
+
+**Derivative of $|e|$:**
+
+$$|e| = \begin{cases} e & e \geq 0 \\ -e & e < 0 \end{cases} \quad\Rightarrow\quad \frac{d}{de}|e| = \begin{cases} +1 & e>0 \\ -1 & e<0 \end{cases}$$
+
+At $e=0$: approaching from the left gives slope $-1$; from the right, slope $+1$. These disagree, so **the derivative does not exist at $e=0$** — a genuine kink (like the corner of a tent). Geometrically: no single tangent line can be drawn at a sharp corner; infinitely many lines from slope $-1$ to $+1$ would all touch only at that point.
+
+**The problem this creates:** $e=0$ is *exactly* the point we're trying to converge toward (perfect prediction). Optimization tools that rely on derivatives lose their guidance signal exactly where it matters most — like a compass that spins randomly the closer you get to your destination.
+
+**Derivative of $e^2$:** $\dfrac{d}{de}e^2 = 2e$ — defined *everywhere*, including at $e=0$ (where it's simply $0$), and it shrinks smoothly toward zero as $e\to 0$. No kink, ever.
+
+> **Pillar 1:** Squared error is differentiable everywhere, including at the minimum — making it usable with calculus-based optimization. Absolute error is not differentiable exactly at the point we're trying to reach.
+
+This is a *convenience* argument. Pillar 2 below is a *correctness* argument — a principled reason, not just an easy one.
+
+---
+
+## Stage 3 — The Deeper "Why": Maximum Likelihood Estimation (MLE)
+
+### Setup: treating noise as random
+
+Rewrite the model with an explicit noise term:
+
+$$y = wx + b + \epsilon$$
+
+Instead of treating $\epsilon$ as a fixed mystery number, treat it as a **random variable** drawn from a probability distribution.
+
+**Reasoned intuition (derived, not asserted):**
+- If positive and negative noise aren't roughly balanced, that's a sign the line is *mispositioned* — not a property of "true" noise. A correctly-fit line splits the densest region of residuals, so positive and negative errors should be **equally likely**.
+- Small errors should be far more common than large ones (a well-behaved model shouldn't produce huge deviations often).
+
+Sketching a curve with these two properties — symmetric around 0, peaked at 0, decaying at the tails — produces a **mountain / bell shape**: the **Gaussian (Normal) distribution**.
+
+### The Gaussian PDF, decoded
+
+$$P(\epsilon) = \frac{1}{\sigma\sqrt{2\pi}} \, e^{-\frac{\epsilon^2}{2\sigma^2}}$$
+
+- $\epsilon$ — the noise value
+- $\sigma$ — controls the spread ("width") of the mountain
+- $\frac{1}{\sigma\sqrt{2\pi}}$ — normalizing constant (ensures total area under curve = 1)
+- $e^{-\epsilon^2/2\sigma^2}$ — the interesting part; note $\epsilon^2$ is baked directly into the exponent
+
+**Sanity checks:**
+- At $\epsilon = 0$: exponent $= 0$, so $e^0 = 1$, giving $P(0) = \frac{1}{\sigma\sqrt{2\pi}}$ — the **maximum** of the curve. (Numerically, for $\sigma=1$: $\frac{1}{\sqrt{2\pi}} \approx 0.3989$ — note this is a **density**, not literally "probability = 1." Densities can be any positive number; only the *total area* under the curve is constrained to equal 1.)
+- As $|\epsilon|$ grows large: $\epsilon^2$ grows large and positive, the minus sign makes the exponent large and **negative**, and $e^{\text{large negative}} \to 0$. So $P(\epsilon)$ shrinks monotonically toward zero as errors grow — matching the "extreme errors are rare" intuition exactly.
+
+### From individual probabilities to Likelihood
+
+For $n$ data points, each has error $\epsilon_i = y_i - (wx_i+b)$. Assuming each point's noise is **independent** of the others (an assumption — flagged for the later "Assumptions" stage), the joint probability of observing *all* the data is the **product** of individual Gaussian probabilities:
+
+$$L(w,b) = \prod_{i=1}^{n} \frac{1}{\sigma\sqrt{2\pi}} e^{-\frac{\epsilon_i^2}{2\sigma^2}}$$
+
+This is the **likelihood**. MLE's strategic idea: the best $w,b$ are whichever make the *observed data* look as probable — as unsurprising — as possible.
+
+### Log-likelihood: turning products into sums
+
+Products of exponentials are painful to differentiate. Take the log (strictly increasing, so the maximizer is unchanged):
+
+$$\ell(w,b) = \log L(w,b) = \sum_{i=1}^n \log\left(\frac{1}{\sigma\sqrt{2\pi}}\right) - \sum_{i=1}^n \frac{\epsilon_i^2}{2\sigma^2}$$
+
+(using $\log(ab) = \log a + \log b$ and $\log(e^x) = x$)
+
+The **first term contains no $w$ or $b$** — it's constant with respect to what we're optimizing. A constant added to a function shifts its *value* but never *where* its max/min occurs (its derivative is zero), so it can be dropped entirely for the purpose of finding the best $w,b$.
+
+$$\text{maximizing } \ell(w,b) \;\equiv\; \text{maximizing } -\sum_{i=1}^n \frac{\epsilon_i^2}{2\sigma^2}$$
+
+$\frac{1}{2\sigma^2}$ is a positive constant multiplier — doesn't shift the location of the max either:
+
+$$\equiv \;\text{maximizing } -\sum_{i=1}^n \epsilon_i^2 \;\equiv\; \textbf{minimizing } \sum_{i=1}^n \epsilon_i^2$$
+
+### The punchline
+
+$$\sum_{i=1}^n \epsilon_i^2 = \sum_{i=1}^n \left(y_i - (wx_i+b)\right)^2$$
+
+> **Pillar 2:** Minimizing squared error is not an arbitrary or merely-convenient choice. It is the **mathematically forced consequence** of assuming the noise in your data is Gaussian (symmetric, zero-centered, small-errors-more-likely-than-large). "Minimize squared error" and "assume Gaussian noise" are the same statement viewed from two angles.
+
+**Side note for later:** different noise assumptions yield different loss functions. Laplace-distributed noise → Mean Absolute Error via the exact same MLE machinery. No ML loss function is arbitrary — each secretly encodes a belief about the noise distribution.
+
+---
+
+## Stage 4 — Deriving the Normal Equation (Closed-Form Solution)
+
+### Vectorizing the model
+
+Generalize from one feature to $p$ features. For point $i$:
+
+$$\hat{y}_i = w_1 x_{i1} + w_2 x_{i2} + \dots + w_p x_{ip} + b$$
+
+Absorb $b$ into the weight vector by adding a dummy column of $1$s to the data matrix. Define:
+
+- $\mathbf{X}$ — design matrix, shape $n \times (p+1)$ (rows = data points, columns = features + the dummy $1$s column)
+- $\mathbf{w}$ — weight vector, shape $(p+1) \times 1$ (includes $b$ as its first element)
+- $\mathbf{y}$ — target vector, shape $n \times 1$
+
+Model for all points at once: $\hat{\mathbf{y}} = \mathbf{X}\mathbf{w}$
+
+Loss (using $\sum_i v_i^2 = \mathbf{v}^T\mathbf{v}$):
+
+$$L(\mathbf{w}) = (\mathbf{y}-\mathbf{X}\mathbf{w})^T(\mathbf{y}-\mathbf{X}\mathbf{w})$$
+
+### Expanding and differentiating
+
+$$L(\mathbf{w}) = \mathbf{y}^T\mathbf{y} - \mathbf{y}^T\mathbf{X}\mathbf{w} - (\mathbf{X}\mathbf{w})^T\mathbf{y} + (\mathbf{X}\mathbf{w})^T(\mathbf{X}\mathbf{w})$$
+
+Since $(\mathbf{X}\mathbf{w})^T\mathbf{y} = \mathbf{y}^T\mathbf{X}\mathbf{w}$ (both are scalars, so each equals its own transpose), the two middle terms combine:
+
+$$L(\mathbf{w}) = \mathbf{y}^T\mathbf{y} - 2\mathbf{y}^T\mathbf{X}\mathbf{w} + \mathbf{w}^T\mathbf{X}^T\mathbf{X}\mathbf{w}$$
+
+Differentiate w.r.t. $\mathbf{w}$ and set to zero:
+
+$$-2\mathbf{X}^T\mathbf{y} + 2\mathbf{X}^T\mathbf{X}\mathbf{w} = \mathbf{0}$$
+
+$$\mathbf{X}^T\mathbf{X}\,\mathbf{w} = \mathbf{X}^T\mathbf{y}$$
+
+If $\mathbf{X}^T\mathbf{X}$ is invertible:
+
+$$\boxed{\mathbf{w} = (\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{y}}$$
+
+**The Normal Equation** — the exact optimal weights, in one shot, no iteration.
+
+### When does it break: invertibility
+
+A matrix is invertible when (all equivalent statements about the *same* underlying fact — full rank):
+
+- Determinant $\neq 0$
+- It's square ($n\times n$)
+- Columns are **linearly independent**
+- $A\mathbf{x}=\mathbf{0}$ has only the trivial solution $\mathbf{x}=\mathbf{0}$
+
+Counter-example verified numerically: $A = \begin{pmatrix}1&2\\2&4\end{pmatrix}$ has column 2 $=2\times$ column 1 (linearly **dependent**), and $\det(A) = 1(4)-2(2)=0$ → **not invertible**.
+
+**Applied to regression:** $\mathbf{X}^T\mathbf{X}$ fails to invert when the *feature columns* of $\mathbf{X}$ are linearly dependent — i.e. **multicollinearity**. Real-world triggers:
+
+- Duplicate features (price in dollars *and* price in cents)
+- More features than data points ($p > n$)
+- A feature that's an exact linear function of others (e.g. total price = unit price × quantity, with all three included)
+
+*(Multicollinearity will resurface as a formal diagnostic check in the Assumptions stage.)*
+
+### When it's technically invertible but still impractical
+
+Matrix inversion costs roughly $O(p^3)$ for a $p\times p$ matrix. At $p=10{,}000$ features (common in NLP/genomics), that's on the order of $10^{12}$ operations — **doesn't scale** to modern high-dimensional or large-scale datasets.
+
+> This is exactly why **Gradient Descent** exists: an iterative method requiring no matrix inversion, scaling far better to large $n$ and large $p$ — and, not coincidentally, the same algorithm underlying neural network training.
+
+---
+
+## Quick-Reference Summary
+
+| Concept | Core takeaway |
+|---|---|
+| Sum of raw errors | Broken — positive/negative errors cancel, can't distinguish a good line from a bad one |
+| MAE ($\sum \lvert e_i\rvert$) | Fixes cancellation, but non-differentiable at $e=0$ — exactly where optimization needs to converge |
+| MSE ($\sum e_i^2$) | Differentiable everywhere; smooth gradient shrinking to 0 near the minimum |
+| MLE + Gaussian noise | Independently *derives* MSE as the mathematically forced choice — not just convenient, but correct under a Gaussian noise assumption |
+| Normal Equation | $\mathbf{w} = (\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\mathbf{y}$ — exact, closed-form, but needs $\mathbf{X}^T\mathbf{X}$ invertible and doesn't scale past $O(p^3)$ |
+| Invertibility failure | Caused by linearly dependent (redundant) feature columns — multicollinearity |
+
+---
+
+## Coming Next
+
+- **Gradient Descent** — the iterative alternative, derived from scratch, with a proof sketch of why it converges
+- **The formal Assumptions of Linear Regression** (linearity, independence, homoscedasticity, normality of residuals, no multicollinearity) — and *why* each one is needed
+- **Diagnostic tests** for each assumption on real data
+- **Bias-Variance tradeoff** and **Regularization** (Ridge / Lasso), derived rather than just named
