@@ -15,8 +15,8 @@ flowchart TD
     E --> F["6. Deriving the Normal Equation<br/>closed-form solution via matrix calculus"]
     F --> G["7. Why it breaks down<br/>invertibility + O(p³) cost"]
     G --> H["8. Gradient Descent<br/>update rule, learning rate, batch vs SGD"]
-    H -.->|"next stage"| I["9. Assumptions of Linear Regression<br/>+ diagnostic tests"]
-    I -.-> J["10. Bias-Variance & Regularization<br/>(Ridge / Lasso)"]
+    H --> I["9. Assumptions of Linear Regression<br/>Linearity, Independence, Homoscedasticity done<br/>Normality + Multicollinearity remaining"]
+    I -.->|"next stage"| J["10. Bias-Variance & Regularization<br/>(Ridge / Lasso)"]
 
     style A fill:#e8f4fd,stroke:#333,color:#000
     style B fill:#e8f4fd,stroke:#333,color:#000
@@ -26,12 +26,12 @@ flowchart TD
     style F fill:#d4edda,stroke:#333,color:#000
     style G fill:#d4edda,stroke:#333,color:#000
     style H fill:#d4edda,stroke:#333,color:#000
-    style I fill:#f0f0f0,stroke:#999,stroke-dasharray: 5 5,color:#000
+    style I fill:#fff3cd,stroke:#333,color:#000
     style J fill:#f0f0f0,stroke:#999,stroke-dasharray: 5 5,color:#000
 ```
 
-**Covered in this document:** Stages 1–8 (solid boxes above).
-**Not yet covered:** Assumptions + diagnostic tests, Bias-Variance & Regularization (dashed boxes — coming next).
+**Covered in this document:** Stages 1–8 fully (green), Stage 9 partially — 3 of 5 assumptions done (yellow = in progress).
+**Not yet covered:** Normality of residuals, No multicollinearity (rest of Stage 9), Bias-Variance & Regularization (dashed box — coming next).
 
 ---
 
@@ -312,6 +312,69 @@ The formulas above sum over **every** data point ($\sum_{i=1}^n$) before making 
 
 ---
 
+## Stage 6 — Assumptions of Linear Regression (Part 1 of 2)
+
+Two independent solvers (Normal Equation, Gradient Descent) are only trustworthy if the underlying model of the world — $y = w_1x_1+\dots+w_px_p+b+\epsilon$, with the Gaussian-noise MLE story from Stage 3 — is actually a reasonable description of the data. That description carries several silent assumptions. Each one is derived below from a concrete scenario, along with the diagnostic test used to check it on real data. Two of five assumptions (Normality of residuals, No multicollinearity) are covered in Part 2, not yet written.
+
+### Assumption 1: Linearity
+
+**The claim:** the true relationship between features and target is actually linear (a straight line/plane), not curved.
+
+**Worked example:** true relationship is $y=x^2$, but a straight line $\hat y = x+0.5$ is fit anyway. Computing residuals $e=y-\hat y$ at a few points:
+
+| $x$ | $y=x^2$ | $\hat y = x+0.5$ | $e = y-\hat y$ |
+|---|---|---|---|
+| $-3$ | $9$ | $-2.5$ | $+11.5$ |
+| $0$ | $0$ | $0.5$ | $-0.5$ |
+| $1$ | $1$ | $1.5$ | $-0.5$ |
+| $3$ | $9$ | $3.5$ | $+5.5$ |
+
+Reading the residuals in order of $x$: $+11.5, -0.5, -0.5, +5.5$ — **positive at the extremes, negative near the center**. This is not random scatter; it's a systematic, U-shaped pattern mirroring the shape of the parabola the line failed to capture.
+
+> **Key distinguishing idea:** random noise has no shape. Leftover *signal* the model failed to capture *does* have a shape — it mirrors whatever true relationship was missed (a quadratic true relationship leaves a U-shaped residual pattern; other missed shapes leave their own characteristic pattern).
+
+**Diagnostic Test #1 — Residual vs. Fitted plot:** plot residuals $e_i$ (y-axis) against $\hat y_i$ or against each feature $x$ (x-axis).
+- Linearity holds → random, formless cloud of points scattered evenly around zero, no visible trend.
+- Linearity violated → visible curve/U-shape/trend in the residuals.
+
+---
+
+### Assumption 2: Independence of Errors
+
+**Where this comes from:** the MLE derivation (Stage 3) computed the joint likelihood as a **product** of individual Gaussian probabilities: $L(w,b) = P(\epsilon_1)\times P(\epsilon_2)\times\dots\times P(\epsilon_n)$. This step, $P(A\text{ and }B)=P(A)\times P(B)$, is only valid when $A$ and $B$ are **independent**. If the errors are dependent, the correct joint probability requires conditional probability, $P(A)\times P(B|A)$ — a different and more complex expression. So the whole Stage 3 likelihood derivation *silently assumed* $\epsilon_1,\dots,\epsilon_n$ are mutually independent.
+
+**Worked example — time series (heatwave):** predicting daily temperature. If Monday's residual is a large positive surprise (heatwave your features didn't capture), Tuesday's residual is *also* likely to be large and positive, since heatwaves persist across days. Knowing Monday's error tells you something about Tuesday's error — the defining signature of **dependence**, violating the assumption directly.
+
+This phenomenon — a residual correlated with a neighboring observation's residual — is called **autocorrelation** (serial correlation). It's the most common real-world violation of this assumption, especially in time-series data.
+
+**Why it matters:**
+1. It invalidates the MLE/likelihood derivation from Stage 3 (the product-of-probabilities step no longer holds).
+2. Practically: estimated uncertainty about $w,b$ becomes unreliable — standard errors typically shrink artificially, making the model **overconfident** about coefficients that aren't actually that precise.
+
+**Diagnostic Test #2 — Durbin-Watson test** (statistic roughly 0–4; near 2 = no autocorrelation, pushed toward 0 or 4 = strong positive/negative autocorrelation), plus a visual check: plot residuals in collection order (e.g., by day). Short streaks of same-signed residuals happen by pure chance even under true independence (like getting heads 3 times in a row on a fair coin) — the real signal is **sustained, extended runs** far longer/more frequent than randomness would produce (e.g., 15 days positive, then 20 days negative, in a slow wave), not the occasional short streak.
+
+---
+
+### Assumption 3: Homoscedasticity
+
+"Homo" = same, "scedasticity" = scatter/dispersion → **"same spread."**
+
+**Where this comes from:** the Gaussian PDF used in Stage 3, $P(\epsilon_i) = \frac{1}{\sigma\sqrt{2\pi}}e^{-\epsilon_i^2/2\sigma^2}$, uses a single shared $\sigma$ with **no subscript $i$** — silently assuming the noise variance is identical for every data point, regardless of where it sits in the data.
+
+**Worked example:** predicting household spending from income. Low-income households have little discretionary room — spending is tightly clustered around a predictable value (small residual spread). High-income households have far more room for variation — some save aggressively, some spend lavishly (large residual spread). The *actual* noise variance differs systematically between groups — violating the single-shared-$\sigma$ assumption. This is called **heteroscedasticity**.
+
+**Why it matters:**
+1. Point estimates of $w,b$ usually stay roughly reasonable (unlike a linearity violation, which corrupts the model itself).
+2. But confidence in those estimates becomes unreliable — standard errors, confidence intervals, and p-values assume one constant $\sigma$ everywhere; treating a noisy group and a tight group as equally confident misleads uncertainty estimates.
+
+**Diagnostic Test #3 — Residual vs. Fitted plot** (same tool as Assumption 1, different pattern to look for):
+- Homoscedasticity holds → residuals form a uniform, constant-width horizontal band across the full range of $\hat y$.
+- Heteroscedasticity present → a **cone/funnel/megaphone shape** — narrow near one end, fanning out wider at the other.
+
+Formal statistical alternatives to eyeballing the funnel: the **Breusch-Pagan test** and the **White test** — both give a p-value for whether residual variance depends on the predictors.
+
+---
+
 ## Quick-Reference Summary
 
 | Concept | Core takeaway |
@@ -325,11 +388,13 @@ The formulas above sum over **every** data point ($\sum_{i=1}^n$) before making 
 | Gradient Descent sign rule | $w_{\text{new}} = w - \alpha \cdot \text{gradient}$ — the gradient's sign automatically encodes the correct direction |
 | Learning rate $\alpha$ | Too large leads to oscillation/divergence; too small leads to slow convergence; no universal formula, tuned experimentally or scheduled/adaptive |
 | Batch vs SGD vs Mini-batch | Full-dataset sum per step vs one-row-per-step vs small-subset-per-step — a compute/noise tradeoff |
+| Linearity | True relationship must be a straight line/plane; violation shows a shaped (e.g. U-shaped) pattern in Residual vs. Fitted plot |
+| Independence of errors | Residuals must not correlate with each other (e.g. autocorrelation in time series); checked via Durbin-Watson + residuals-by-order plot |
+| Homoscedasticity | Noise variance ($\sigma^2$) must be constant across all observations; violation shows a funnel/cone shape in Residual vs. Fitted plot; checked via Breusch-Pagan / White test |
 
 ---
 
 ## Coming Next
 
-- **The formal Assumptions of Linear Regression** (linearity, independence, homoscedasticity, normality of residuals, no multicollinearity) — and *why* each one is needed
-- **Diagnostic tests** for each assumption on real data
+- **Assumptions Part 2:** Normality of residuals, No multicollinearity — and *why* each one is needed, with diagnostic tests (Q-Q plots, VIF)
 - **Bias-Variance tradeoff** and **Regularization** (Ridge / Lasso), derived rather than just named
