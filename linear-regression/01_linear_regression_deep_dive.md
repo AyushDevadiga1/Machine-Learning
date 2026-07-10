@@ -15,7 +15,7 @@ flowchart TD
     E --> F["6. Deriving the Normal Equation<br/>closed-form solution via matrix calculus"]
     F --> G["7. Why it breaks down<br/>invertibility + O(p³) cost"]
     G --> H["8. Gradient Descent<br/>update rule, learning rate, batch vs SGD"]
-    H --> I["9. Assumptions of Linear Regression<br/>Linearity, Independence, Homoscedasticity done<br/>Normality + Multicollinearity remaining"]
+    H --> I["9. Assumptions of Linear Regression<br/>Linearity, Independence, Homoscedasticity,<br/>Normality, No Multicollinearity — all done"]
     I -.->|"next stage"| J["10. Bias-Variance & Regularization<br/>(Ridge / Lasso)"]
 
     style A fill:#e8f4fd,stroke:#333,color:#000
@@ -26,12 +26,12 @@ flowchart TD
     style F fill:#d4edda,stroke:#333,color:#000
     style G fill:#d4edda,stroke:#333,color:#000
     style H fill:#d4edda,stroke:#333,color:#000
-    style I fill:#fff3cd,stroke:#333,color:#000
+    style I fill:#d4edda,stroke:#333,color:#000
     style J fill:#f0f0f0,stroke:#999,stroke-dasharray: 5 5,color:#000
 ```
 
-**Covered in this document:** Stages 1–8 fully (green), Stage 9 partially — 3 of 5 assumptions done (yellow = in progress).
-**Not yet covered:** Normality of residuals, No multicollinearity (rest of Stage 9), Bias-Variance & Regularization (dashed box — coming next).
+**Covered in this document:** Stages 1–9 fully complete (green).
+**Not yet covered:** Bias-Variance tradeoff & Regularization (Ridge/Lasso) — dashed box, coming next session.
 
 ---
 
@@ -312,9 +312,9 @@ The formulas above sum over **every** data point ($\sum_{i=1}^n$) before making 
 
 ---
 
-## Stage 6 — Assumptions of Linear Regression (Part 1 of 2)
+## Stage 6 — Assumptions of Linear Regression
 
-Two independent solvers (Normal Equation, Gradient Descent) are only trustworthy if the underlying model of the world — $y = w_1x_1+\dots+w_px_p+b+\epsilon$, with the Gaussian-noise MLE story from Stage 3 — is actually a reasonable description of the data. That description carries several silent assumptions. Each one is derived below from a concrete scenario, along with the diagnostic test used to check it on real data. Two of five assumptions (Normality of residuals, No multicollinearity) are covered in Part 2, not yet written.
+Two independent solvers (Normal Equation, Gradient Descent) are only trustworthy if the underlying model of the world — $y = w_1x_1+\dots+w_px_p+b+\epsilon$, with the Gaussian-noise MLE story from Stage 3 — is actually a reasonable description of the data. That description carries several silent assumptions. Each one is derived below from a concrete scenario, along with the diagnostic test used to check it on real data.
 
 ### Assumption 1: Linearity
 
@@ -375,6 +375,60 @@ Formal statistical alternatives to eyeballing the funnel: the **Breusch-Pagan te
 
 ---
 
+### Assumption 4: Normality of Residuals
+
+**Not to be confused with Homoscedasticity.** Homoscedasticity is about the *spread* of residuals being constant everywhere (no funnel shape) — it says nothing about the functional form. Normality is a separate, stronger claim: that residuals, taken together, actually follow a Gaussian bell-curve shape (symmetric, not skewed, not heavy-tailed).
+
+**The tension worth noticing:** neither the Normal Equation (pure matrix algebra) nor Gradient Descent (pure calculus) ever checks or depends on what distribution the real-world residuals follow — both mechanically compute "whatever $w,b$ minimizes squared error," regardless of the true noise shape. So if point estimates come out the same either way, what does Normality actually protect?
+
+**The answer — derived algebraically, not observed empirically.** Substitute $\mathbf{y}=\mathbf{X}\mathbf{w}+\boldsymbol\epsilon$ into the Normal Equation:
+
+$$\hat{\mathbf{w}} = (\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T(\mathbf{X}\mathbf{w}+\boldsymbol\epsilon) = \mathbf{w} + (\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T\boldsymbol\epsilon$$
+
+$(\mathbf{X}^T\mathbf{X})^{-1}\mathbf{X}^T$ is just a fixed matrix — no randomness of its own. Using the theorem that **any linear transformation of a Gaussian random variable is itself Gaussian**: if $\boldsymbol\epsilon$ is Gaussian, then $\hat{\mathbf{w}}$ (the *estimated coefficients themselves*) must also be Gaussian — a direct algebraic consequence, not something you'd merely observe on a plot.
+
+**Why this matters practically:** knowing that $\hat{\mathbf{w}}$ follows a known Gaussian (or t-distribution, for small samples) shape is exactly what's needed to construct valid **confidence intervals** around each coefficient and run **hypothesis tests** ("is this coefficient really different from zero, or could it just be noise?"). Without Normality holding, p-values and confidence intervals rest on a false premise — though for large $n$, the **Central Limit Theorem** bails you out anyway (see comparison below).
+
+**Diagnostic Test #4 — Q-Q plot (Quantile-Quantile plot).** Sort residuals and plot them against theoretical Gaussian quantiles. Points falling along a straight diagonal → normal. Systematic bending away (S-curve, or tails departing the line) → skew or heavy/light tails. Formal alternative: **Shapiro-Wilk test**, giving a p-value for departure from normality.
+
+**Normality vs. Homoscedasticity — the key practical difference:** non-normality's damage *shrinks* as $n$ grows (Central Limit Theorem makes $\hat{\mathbf{w}}$ approximately Gaussian regardless, given enough data). Heteroscedasticity's damage does **not** shrink with more data — the standard-error formula itself is built on a false premise (constant $\sigma$) regardless of sample size, and needs an explicit structural fix (robust standard errors, or Weighted Least Squares).
+
+---
+
+### Assumption 5: No (or Low) Multicollinearity
+
+**Direct continuation of Stage 4.** There, *perfect* linear dependence between feature columns (e.g., column 2 = 2× column 1) made $\det(\mathbf{X}^T\mathbf{X})=0$, breaking the Normal Equation outright. In practice, perfect dependence is rare — what actually shows up constantly is **near**-dependence: features that are highly correlated but not identical (e.g., hours studied and hours slept, if disciplined students happen to do both more).
+
+**Thought experiment:** if hours-studied and hours-slept move together almost in lockstep across a dataset, the model is asked to split credit between two things that, in this data, essentially always show up together. Sliding $w_{\text{study}}$ up while sliding $w_{\text{sleep}}$ down by a compensating amount barely changes overall predictions or total squared error — the two features act like a single feature to the model.
+
+**Consequence for the loss surface:** instead of a clean round bowl, $L(w_1,w_2)$ becomes a **long, stretched-out valley** — nearly flat along the "trade one weight for the other" direction, steep perpendicular to it. Two concrete problems follow:
+
+1. **Unstable coefficients:** many very different $(w_{\text{study}}, w_{\text{sleep}})$ pairs sit at nearly the same minimal loss. A tiny change in the data can swing the coefficients wildly (even sign flips) while barely changing predictions — breaking the interpretability that Assumption 4 was trying to protect.
+2. **Ill-conditioning:** $\mathbf{X}^T\mathbf{X}$ is technically still invertible (determinant near, not exactly, zero) but numerically fragile — tiny floating-point rounding gets amplified into large swings in $\hat{\mathbf{w}}$. The *soft* version of Stage 4's *hard* singularity failure.
+
+**Diagnostic Test #5 — VIF (Variance Inflation Factor).** For each feature $x_j$, regress $x_j$ on *all other features* and get that side-regression's $R_j^2$ (how well the others predict/explain $x_j$). High $R_j^2$ = high redundancy = little unique information contributed by $x_j$.
+
+$$\text{VIF}_j = \frac{1}{1-R_j^2}$$
+
+- $R_j^2 \to 0$ (fully independent feature) → $\text{VIF} \to 1$ — the ideal case.
+- $R_j^2 \to 1$ (near-perfect redundancy) → $\text{VIF} \to \infty$ — the soft version of Stage 4's exact singularity.
+
+**Practical thresholds:** VIF $>5$ often flagged as concerning; VIF $>10$ generally considered a serious problem. Fixes: drop one of the redundant features, combine them (e.g. PCA), or use **regularization** — Ridge Regression specifically was built to numerically handle exactly this problem by preventing wild coefficient swings (a direct preview of Stage 7, next).
+
+---
+
+### All Five Assumptions — Full Summary
+
+| # | Assumption | What it claims | Diagnostic |
+|---|---|---|---|
+| 1 | Linearity | True relationship is a straight line/plane | Residual vs. Fitted plot (curve/U-shape = violation) |
+| 2 | Independence of errors | Residuals don't correlate with each other | Durbin-Watson test / residuals-by-order plot |
+| 3 | Homoscedasticity | Noise variance ($\sigma^2$) constant across all observations | Residual vs. Fitted plot (funnel shape = violation) / Breusch-Pagan test |
+| 4 | Normality of residuals | Residuals follow a Gaussian shape | Q-Q plot / Shapiro-Wilk test |
+| 5 | No multicollinearity | Feature columns aren't (near-)linearly dependent | VIF (Variance Inflation Factor) |
+
+---
+
 ## Quick-Reference Summary
 
 | Concept | Core takeaway |
@@ -388,13 +442,10 @@ Formal statistical alternatives to eyeballing the funnel: the **Breusch-Pagan te
 | Gradient Descent sign rule | $w_{\text{new}} = w - \alpha \cdot \text{gradient}$ — the gradient's sign automatically encodes the correct direction |
 | Learning rate $\alpha$ | Too large leads to oscillation/divergence; too small leads to slow convergence; no universal formula, tuned experimentally or scheduled/adaptive |
 | Batch vs SGD vs Mini-batch | Full-dataset sum per step vs one-row-per-step vs small-subset-per-step — a compute/noise tradeoff |
-| Linearity | True relationship must be a straight line/plane; violation shows a shaped (e.g. U-shaped) pattern in Residual vs. Fitted plot |
-| Independence of errors | Residuals must not correlate with each other (e.g. autocorrelation in time series); checked via Durbin-Watson + residuals-by-order plot |
-| Homoscedasticity | Noise variance ($\sigma^2$) must be constant across all observations; violation shows a funnel/cone shape in Residual vs. Fitted plot; checked via Breusch-Pagan / White test |
+| Assumptions (all 5) | See full table above — Linearity, Independence, Homoscedasticity, Normality, No Multicollinearity, each with its own diagnostic test |
 
 ---
 
 ## Coming Next
 
-- **Assumptions Part 2:** Normality of residuals, No multicollinearity — and *why* each one is needed, with diagnostic tests (Q-Q plots, VIF)
 - **Bias-Variance tradeoff** and **Regularization** (Ridge / Lasso), derived rather than just named
