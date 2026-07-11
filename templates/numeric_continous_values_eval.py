@@ -17,12 +17,12 @@ def get_numeric_continous_evaluation(df,numeric_continous_columns):
         no_of_outlier = ((df[x] > upper_bound ) | (df[x] < lower_bound )).sum()
         percentage_outlier = no_of_outlier/len(df)*100
 
-        print(f'{'='*100}IQR{'='*125}')
+        print(f'{'='*50}IQR{'='*50}')
         print(f'The Lower bound : {lower_bound:.2f}')
         print(f'The Upper bound : {upper_bound:.2f}')
         print(f'The Number of outlier for this column by IQR : {no_of_outlier}')
         print(f'The Percentage of outlier for this column by IQR : {percentage_outlier}')
-        print(f'='*250)
+        print(f'='*103)
 
         print(f'The Graphical Analysis : \n')
 
