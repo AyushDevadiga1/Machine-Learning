@@ -4,7 +4,7 @@
 
 ---
 
-## The Roadmap (full picture)
+## The Roadmap (full picture — complete)
 
 ```mermaid
 flowchart TD
@@ -16,7 +16,7 @@ flowchart TD
     F --> G["7. Why it breaks down<br/>invertibility + O(p³) cost"]
     G --> H["8. Gradient Descent<br/>update rule, learning rate, batch vs SGD"]
     H --> I["9. Assumptions of Linear Regression<br/>Linearity, Independence, Homoscedasticity,<br/>Normality, No Multicollinearity — all done"]
-    I -.->|"next stage"| J["10. Bias-Variance & Regularization<br/>(Ridge / Lasso)"]
+    I --> J["10. Bias-Variance & Regularization<br/>Ridge + Lasso, derived end to end"]
 
     style A fill:#e8f4fd,stroke:#333,color:#000
     style B fill:#e8f4fd,stroke:#333,color:#000
@@ -27,11 +27,10 @@ flowchart TD
     style G fill:#d4edda,stroke:#333,color:#000
     style H fill:#d4edda,stroke:#333,color:#000
     style I fill:#d4edda,stroke:#333,color:#000
-    style J fill:#f0f0f0,stroke:#999,stroke-dasharray: 5 5,color:#000
+    style J fill:#d4edda,stroke:#333,color:#000
 ```
 
-**Covered in this document:** Stages 1–9 fully complete (green).
-**Not yet covered:** Bias-Variance tradeoff & Regularization (Ridge/Lasso) — dashed box, coming next session.
+**All 10 stages complete.** This document now covers the full end-to-end derivation of Linear Regression: from "what is the problem" through the loss function, both solving methods, all five classical assumptions with diagnostics, and the Bias-Variance/Regularization extension.
 
 ---
 
@@ -429,6 +428,84 @@ $$\text{VIF}_j = \frac{1}{1-R_j^2}$$
 
 ---
 
+## Stage 7 — Bias-Variance Tradeoff and Regularization
+
+### The scenario: two models, two failure modes
+
+Fit a very simple straight line (Model A) versus a wildly flexible high-degree polynomial (Model B) to the same data. Model B achieves near-zero training error (bends through almost every point), but on **new, unseen data**, Model B typically performs *worse* than Model A — it memorized the specific noise in the training set rather than the true underlying relationship. Model A **generalizes**; Model B **memorizes**.
+
+### Formalizing the intuition: many hypothetical training sets
+
+Imagine collecting many different training datasets from the same true population, retraining the model on each, and looking at predictions for one fixed test point with true value $f(x)$.
+
+- **Bias:** how far the *average* prediction (across all retrainings) sits from the true value: $\text{Bias}(\hat f(x)) = E[\hat f(x)] - f(x)$. Model A's failure mode — predictions tightly clustered, but consistently off-target (like an archer with miscalibrated aim: tight grouping, wrong spot).
+- **Variance:** how much predictions jump around from one retraining to the next: $\text{Variance}(\hat f(x)) = E[(\hat f(x)-E[\hat f(x)])^2]$. Model B's failure mode — predictions scattered widely, roughly centered on target on average, but individually unreliable (an archer with correct aim on average but shaky, inconsistent hands).
+
+### Deriving the exact decomposition
+
+True generative model (Stage 1/3): $y=f(x)+\epsilon$, with $\epsilon$ mean-zero, variance $\sigma^2$. Goal: derive $E[(y-\hat f(x))^2]$.
+
+Insert and subtract $E[\hat f(x)]$:
+
+$$y-\hat f(x) = \underbrace{(f(x)-E[\hat f(x)])}_{A,\text{ fixed}} + \underbrace{(E[\hat f(x)]-\hat f(x))}_{B,\text{ varies with training set}} + \underbrace{\epsilon}_{C,\text{ fresh test noise}}$$
+
+Squaring and taking expectation, $(A+B+C)^2 = A^2+B^2+C^2+2AB+2AC+2BC$. All three cross terms vanish:
+
+- $E[2AB]=2A\cdot E[B]=0$ since $E[B]=E[\hat f(x)]-E[\hat f(x)]=0$
+- $E[2AC]=2A\cdot E[\epsilon]=0$ since noise has mean zero (Stage 3 assumption)
+- $E[2BC]=2E[B]E[C]=0$ since $B$ (training-set randomness) and $C$ (independent fresh test noise) are independent, and $E[C]=0$
+
+Leaving:
+
+$$\boxed{E\left[(y-\hat f(x))^2\right] = \text{Bias}(\hat f(x))^2 + \text{Variance}(\hat f(x)) + \sigma^2}$$
+
+Total expected test error splits **exactly** into three additive pieces: squared bias, variance, and irreducible noise ($\sigma^2$, the same Gaussian noise floor from Stage 3 — no model can ever beat this).
+
+### The tradeoff
+
+Increasing model flexibility **decreases Bias** (can bend closer to the true shape) but **increases Variance** (more sensitive to whatever specific training data it saw) — the two move in opposite directions. Total error traces a **U-shape** as flexibility increases: high at both extremes (Bias²-dominated on the simple end, Variance-dominated on the flexible end), with a sweet spot in between. The best model sits at the bottom of that U — neither maximally simple nor maximally flexible.
+
+### Regularization: controlling flexibility without changing feature count
+
+Wild, unstable coefficients (large magnitude, swinging to cancel each other out) are the *mechanism* by which a flexible model achieves dangerous high-variance behavior — directly recalling the multicollinearity instability from Assumption 5. **Regularization** modifies the loss function to actively discourage large weights.
+
+### Ridge Regression (L2 penalty)
+
+$$L_{\text{ridge}}(\mathbf{w}) = \sum_{i=1}^n (y_i-\hat y_i)^2 + \lambda\sum_{j=1}^p w_j^2$$
+
+$\lambda$ is a new hyperparameter controlling penalty strength. Boundary checks: $\lambda=0$ reduces to plain OLS (no penalty); as $\lambda$ grows large, weights are pushed toward (but never exactly to) zero.
+
+**Deriving the closed-form solution.** In vector form, $L_{\text{ridge}}(\mathbf{w}) = (\mathbf{y}-\mathbf{X}\mathbf{w})^T(\mathbf{y}-\mathbf{X}\mathbf{w}) + \lambda\mathbf{w}^T\mathbf{w}$. Differentiating (reusing the Stage 4 expansion, plus $\frac{\partial}{\partial\mathbf{w}}[\lambda\mathbf{w}^T\mathbf{w}]=2\lambda\mathbf{w}$) and setting to zero:
+
+$$-2\mathbf{X}^T\mathbf{y}+2\mathbf{X}^T\mathbf{X}\mathbf{w}+2\lambda\mathbf{w}=\mathbf{0}$$
+
+Rewriting $\lambda\mathbf{w}=\lambda\mathbf{I}\mathbf{w}$ (inserting the identity matrix) so $\mathbf{w}$ can be factored out of both matrix terms:
+
+$$(\mathbf{X}^T\mathbf{X}+\lambda\mathbf{I})\mathbf{w}=\mathbf{X}^T\mathbf{y}$$
+
+$$\boxed{\mathbf{w}_{\text{ridge}} = (\mathbf{X}^T\mathbf{X}+\lambda\mathbf{I})^{-1}\mathbf{X}^T\mathbf{y}}$$
+
+**Direct tie back to Assumption 5 (multicollinearity):** adding $\lambda\mathbf{I}$ nudges every diagonal entry of $\mathbf{X}^T\mathbf{X}$ away from zero before inverting — concretely, like comparing $a=0.001$ (dangerously close to zero) versus $a+\lambda=1.001$ (safe to invert). This directly repairs the exact ill-conditioning problem identified in Assumption 5 — Ridge isn't just an abstract flexibility control, it's a numerically-motivated fix for near-singular $\mathbf{X}^T\mathbf{X}$.
+
+### Lasso Regression (L1 penalty)
+
+$$L_{\text{lasso}}(\mathbf{w}) = \sum_{i=1}^n (y_i-\hat y_i)^2 + \lambda\sum_{j=1}^p |w_j|$$
+
+Since $|w_j|$ has the exact same non-differentiable kink at $w_j=0$ proven back in Stage 2 (for $|e|$), setting $\frac{\partial L_{\text{lasso}}}{\partial w_j}=0$ and solving algebraically fails at $w_j=0$ — no clean closed form exists; Lasso is solved with iterative methods (e.g. coordinate descent).
+
+**Geometric intuition — constraint regions.** Equivalent framing: minimize squared error subject to a budget on weight size. Ridge's budget region ($w_1^2+w_2^2\le t$) is a **circle**; Lasso's ($|w_1|+|w_2|\le t$) is a **diamond**. As the loss contour (an ellipse centered at the unconstrained OLS solution) shrinks toward the minimum, it first touches the constraint boundary:
+
+- Circle: perfectly smooth everywhere, so the touching point can land anywhere — generically at a point where all weights are nonzero. Matches the algebraic result: Ridge shrinks weights toward zero but essentially never exactly to zero.
+- Diamond: has **sharp corners** sitting exactly on the axes (where one weight equals exactly $0$). A corner has no single well-defined tangent direction — the very same kink property as $|e|$ at $e=0$ from Stage 2 — making it disproportionately likely to be the first point of contact. This is *why* Lasso solutions frequently land exactly on an axis, forcing some weights to exactly zero.
+
+**Practical distinction:**
+- **Ridge** shrinks all coefficients toward zero, keeps every feature, useful when most features are somewhat informative.
+- **Lasso** can zero out coefficients exactly, performing automatic **feature selection** — useful when many features are suspected irrelevant, especially in high-dimensional settings ($p$ large, potentially $p>n$, recalling Stage 4).
+
+Notably, the same non-differentiable kink (Stage 2) is a *problem* for the loss function (blocks clean minimum-finding via calculus) but a *feature* for the penalty function (causes sparsity) — one mathematical object, opposite consequences depending on where it's used.
+
+---
+
 ## Quick-Reference Summary
 
 | Concept | Core takeaway |
@@ -443,9 +520,12 @@ $$\text{VIF}_j = \frac{1}{1-R_j^2}$$
 | Learning rate $\alpha$ | Too large leads to oscillation/divergence; too small leads to slow convergence; no universal formula, tuned experimentally or scheduled/adaptive |
 | Batch vs SGD vs Mini-batch | Full-dataset sum per step vs one-row-per-step vs small-subset-per-step — a compute/noise tradeoff |
 | Assumptions (all 5) | See full table above — Linearity, Independence, Homoscedasticity, Normality, No Multicollinearity, each with its own diagnostic test |
+| Bias-Variance decomposition | $E[(y-\hat f(x))^2] = \text{Bias}^2 + \text{Variance} + \sigma^2$ — exact, derived; more flexibility trades bias for variance |
+| Ridge (L2) | $\mathbf{w}_{\text{ridge}}=(\mathbf{X}^T\mathbf{X}+\lambda\mathbf{I})^{-1}\mathbf{X}^T\mathbf{y}$ — shrinks weights toward zero, fixes near-singular $\mathbf{X}^T\mathbf{X}$ (multicollinearity) |
+| Lasso (L1) | No closed form (kink at $w_j=0$, same as Stage 2's $\lvert e\rvert$); can force weights exactly to zero — built-in feature selection |
 
 ---
 
-## Coming Next
+## Summary
 
-- **Bias-Variance tradeoff** and **Regularization** (Ridge / Lasso), derived rather than just named
+This document now covers Linear Regression end to end, fully derived rather than memorized: the problem setup, the loss function (via two independent justifications), both solving methods (exact and iterative), all five classical assumptions with their diagnostics, and the Bias-Variance/Regularization extension. Every major formula traces back to a worked example or an earlier stage in this same document — nothing was asserted without derivation.
