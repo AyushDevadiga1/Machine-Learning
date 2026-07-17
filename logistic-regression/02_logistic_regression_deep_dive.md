@@ -28,7 +28,7 @@ Stage 7 → Extensions
            class imbalance handling)
 ```
 
-Status: **Stage 2 complete → Stage 3 in progress**
+Status: **Stage 3 complete → Stage 4 in progress**
 
 ---
 
@@ -64,6 +64,21 @@ A literal step function has derivative 0 almost everywhere (no signal regardless
 ---
 
 ## Stage 3: Loss Function Derivation (MLE on Bernoulli)
+
+**Same procedure as Linear Regression's MLE derivation, different distribution.** Linear Regression assumed $\epsilon\sim\mathcal N(0,\sigma^2)$ and showed maximizing Gaussian log-likelihood ⟺ minimizing SSE. Here, $y\in\{0,1\}$ is Bernoulli, not Gaussian.
+
+- Bernoulli pmf for one point: $P(y\mid p) = p^y(1-p)^{1-y}$ (verified: collapses to $p$ when $y=1$, $1-p$ when $y=0$).
+- Substitute model: $p_i = \sigma(z_i)$. Joint likelihood over $n$ iid points: $L(\beta_0,\beta_1) = \prod_{i=1}^n \sigma(z_i)^{y_i}(1-\sigma(z_i))^{1-y_i}$.
+- Raw product underflows numerically for large $n$ (e.g. $0.96^{10000}\approx 5\times10^{-178}$) → take log (strictly monotonic, so $\arg\max L = \arg\max \log L$):
+$$\ell(\beta_0,\beta_1) = \sum_{i=1}^n\Big[y_i\log(\sigma(z_i))+(1-y_i)\log(1-\sigma(z_i))\Big]$$
+- Worked numerical example ($\beta_0=-5,\beta_1=1.2$; points $x=2,y=0$; $x=5,y=1$; $x=9,y=1$): $z_i = -2.6, 1.0, 5.8$; $p_i=0.0691,0.7311,0.9970$; per-point log-lik terms $=-0.0716,-0.3133,-0.0030$; $\ell = -0.3879$.
+- Flip sign (turn maximize into minimize) and average (keeps gradient magnitude independent of $n$, same reason SSE→MSE):
+$$L(\beta_0,\beta_1) = -\frac{1}{n}\sum_{i=1}^n\Big[y_i\log(p_i)+(1-y_i)\log(1-p_i)\Big]$$
+This is **Binary Cross-Entropy (log loss)**. For the worked example: $L = 0.3879/3 = 0.1293$.
+
+---
+
+## Stage 4: Optimization — Gradient of BCE, Gradient Descent
 
 *(notes to be filled in as we work through it)*
 
