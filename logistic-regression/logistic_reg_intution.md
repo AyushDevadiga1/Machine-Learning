@@ -29,6 +29,7 @@ This is **not** a traditional regression problem; it is a **classification** pro
 
 ---
 
+
 ## Stage 1 — Let's Try Linear Regression
 
 We already know Linear Regression, so let's try to fit a straight line to this data:
@@ -42,13 +43,12 @@ $$\hat{y} = -0.2775 + 0.1866x$$
 Now let's try to predict outcomes using this model:
 
 * For $x = 1$, we obtain: **$-0.09$**
+
 > *What does a probability of $-9\%$ even mean? Probabilities cannot be negative.*
 
-
 * For $x = 8$, we obtain: **$1.22$**
+
 > *What is a $122\%$ probability? That is mathematically impossible.*
-
-
 
 ### First Conclusion
 
@@ -224,7 +224,184 @@ $$J = -\sum_{i} \left[ y_i \log(p_i) + (1-y_i) \log(1-p_i) \right]$$
 
 This is **Binary Cross-Entropy Loss**.
 
-We arrived here logically:
+---
 
-* We did not select it arbitrarily because a textbook told us to.
-* We derived it step-by-step because it is the mathematically natural way to measure error when modeling probabilities.
+## Stage 14 — Deriving the Gradients
+
+To train our model using Gradient Descent, we need the gradients of the loss with respect to our parameters.
+
+Our computational graph flows as follows:
+
+```text
+x
+│
+▼
+z = wᵀx + b
+│
+▼
+p = σ(z)
+│
+▼
+Cross-Entropy Loss
+
+```
+
+Rather than differentiating the loss directly with respect to the weights, we apply the **Chain Rule**.
+
+---
+
+### Step 1 — Gradient of the Loss with Respect to the Probability
+
+Starting from the Binary Cross-Entropy loss:
+
+$$L = -\left[y\log(p) + (1-y)\log(1-p)\right]$$
+
+Differentiating with respect to $p$:
+
+$$\frac{\partial L}{\partial p} = -\frac{y}{p} + \frac{1-y}{1-p}$$
+
+Taking a common denominator:
+
+$$\frac{\partial L}{\partial p} = \frac{p-y}{p(1-p)}$$
+
+---
+
+### Step 2 — Derivative of the Sigmoid
+
+Recall the sigmoid function:
+
+$$\sigma(z) = \frac{1}{1+e^{-z}}$$
+
+Differentiating with respect to $z$ yields:
+
+$$\frac{\partial p}{\partial z} = p(1-p)$$
+
+> *This elegant result appears repeatedly throughout machine learning.*
+
+---
+
+### Step 3 — The Beautiful Cancellation
+
+Applying the chain rule:
+
+$$\frac{\partial L}{\partial z} = \frac{\partial L}{\partial p} \cdot \frac{\partial p}{\partial z}$$
+
+Substituting our previous calculations into the equation:
+
+$$\frac{\partial L}{\partial z} = \frac{p-y}{p(1-p)} \cdot p(1-p)$$
+
+The denominator and numerator cancel perfectly:
+
+$$\frac{\partial L}{\partial z} = p-y$$
+
+> *This is one of the most elegant derivations in Logistic Regression.*
+
+---
+
+### Why This Is Better Than MSE
+
+Using MSE with a sigmoid gives:
+
+$$\frac{\partial L}{\partial z} = (p-y)p(1-p)$$
+
+The extra term $p(1-p)$ shrinks the gradient whenever the sigmoid saturates near `0` or `1`.
+
+> *As a result, the model learns the slowest when it is most confidently wrong.*
+
+Cross-Entropy removes this problem naturally. The sigmoid derivative is **not removed manually**. Instead, it is cancelled mathematically by the derivative of the logarithm.
+
+The final learning signal becomes:
+
+$$\frac{\partial L}{\partial z} = p-y$$
+
+which remains large whenever the prediction is far from the true label.
+
+---
+
+### Step 4 — Gradients with Respect to the Parameters
+
+Since our linear baseline equation is defined as:
+
+$$z = w^Tx + b$$
+
+The chain rule yields the following results:
+
+* **For the bias:**
+
+$$\frac{\partial L}{\partial b} = p-y$$
+
+
+
+because $\frac{\partial z}{\partial b} = 1$.
+* **For the weights:**
+
+$$\frac{\partial L}{\partial w} = (p-y)x$$
+
+
+
+because $\frac{\partial z}{\partial w} = x$.
+* **For multiple features:**
+
+$$\nabla_w L = (p-y)x$$
+
+
+
+where $x$ is now the feature vector.
+
+---
+
+## Stage 15 — The Final Insight
+
+Notice something remarkable when looking at the parameter derivatives side-by-side.
+
+* For **Linear Regression:**
+
+$$\frac{\partial L}{\partial w} = (\hat{y}-y)x$$
+
+
+* For **Logistic Regression:**
+
+$$\frac{\partial L}{\partial w} = (p-y)x$$
+
+
+
+The optimization algorithm structure is almost identical! The only difference is **what the model predicts**:
+
+* Linear Regression predicts a continuous value $\hat{y}$.
+* Logistic Regression predicts a probability $p$.
+
+Everything else—gradient descent routines, parameter updates, and optimization pathways—follows the exact same underlying principles.
+
+---
+
+## Logistic Regression Cheat Sheet
+
+### Forward Pass
+
+$$z = w^Tx + b$$
+
+$$p = \sigma(z) = \frac{1}{1+e^{-z}}$$
+
+---
+
+### Loss
+
+$$L = -\left[y\log(p) + (1-y)\log(1-p)\right]$$
+
+---
+
+### Gradients
+
+$$\frac{\partial L}{\partial z} = p-y$$
+
+$$\frac{\partial L}{\partial w} = (p-y)x$$
+
+$$\frac{\partial L}{\partial b} = p-y$$
+
+---
+
+### Gradient Descent Update
+
+$$w \leftarrow w - \eta\frac{\partial L}{\partial w}$$
+
+$$b \leftarrow b - \eta\frac{\partial L}{\partial b}$$
