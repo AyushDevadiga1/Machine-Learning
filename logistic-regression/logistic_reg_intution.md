@@ -405,3 +405,120 @@ $$\frac{\partial L}{\partial b} = p-y$$
 $$w \leftarrow w - \eta\frac{\partial L}{\partial w}$$
 
 $$b \leftarrow b - \eta\frac{\partial L}{\partial b}$$
+
+---
+
+# Assumptions of Logistic Regression
+
+## Stage 16 — What Did We Actually Assume?
+
+Now that the full model is derived and trained, it is worth stepping back and asking: what did we silently commit to along the way?
+
+Every modelling decision we made — the Bernoulli distribution, the log-odds linearity, the likelihood product — carried an assumption with it. Violating any of them breaks the mathematics in a precise, traceable way.
+
+---
+
+## Stage 17 — Assumption 1: Bernoulli Output (and Its Variance Consequence)
+
+The very first commitment we made was:
+
+$$y \mid x \sim \text{Bernoulli}\big(p(x)\big)$$
+
+This single choice has an immediate, unavoidable mathematical consequence for variance. For a Bernoulli random variable, the variance is not a free parameter — it is entirely determined by the mean:
+
+$$\text{Var}(y \mid x) = p(x)\big(1 - p(x)\big)$$
+
+Because $p$ changes with every value of $x$, the variance is never constant. It is small when $p$ is near $0$ or $1$ (the model is confident), and it peaks at $0.25$ exactly when $p = 0.5$ (maximum uncertainty).
+
+### Third Conclusion
+
+> In Linear Regression, constant variance (Homoscedasticity) must be explicitly assumed as an extra condition. In Logistic Regression, it is never assumed at all. The Bernoulli distribution forces the variance to be heteroscedastic by design — not as a flaw, but as a mathematical consequence of the output being binary.
+
+---
+
+## Stage 18 — Assumption 2: Linearity in the Log-Odds
+
+This assumption is the direct consequence of the derivation in Stage 6. When we set the log-odds equal to the linear equation:
+
+$$\log\left(\frac{p(x)}{1-p(x)}\right) = \beta_0 + \beta_1 x$$
+
+we committed to a specific structural claim: for every one-unit increase in $x$, the log-odds shift by a constant amount $\beta_1$.
+
+Notice what this does *not* say. The relationship between $x$ and the raw probability $p(x)$ is a curve — the sigmoid. We are not assuming that probability is linear in $x$. We are only assuming that the **log-odds** are.
+
+### Fourth Conclusion
+
+> Logistic Regression does not need $p$ to be linear in $x$. It only requires the logit, $\log\!\left(\frac{p}{1-p}\right)$, to be linear. This is not an extra condition bolted on from outside — it is the exact constraint that gave rise to the sigmoid function in the first place.
+
+---
+
+## Stage 19 — Assumption 3: Independence of Observations
+
+When we derived the joint likelihood in Stage 11 by multiplying individual probabilities:
+
+$$L(\beta) = \prod_{i=1}^{n} p_i^{y_i}(1-p_i)^{1-y_i}$$
+
+we used a fundamental rule of probability: you can only multiply individual probabilities to obtain a joint probability when the events are **independent**.
+
+$$P(A \text{ and } B) = P(A) \times P(B) \quad \text{only if } A \perp B$$
+
+In Logistic Regression, unlike Linear Regression, there is no explicit error term $\epsilon$. So the independence assumption shifts from errors to outcomes directly: we require that the observed labels $y_i$ and $y_j$ are completely independent of each other, conditional on the predictors.
+
+**When this breaks:** If you collect multiple tumor biopsies from the same patient, those data points are clustered and correlated. Treating them as independent artificially inflates your effective sample size, shrinks standard errors, and invalidates the entire MLE engine.
+
+### Fifth Conclusion
+
+> The product structure of the likelihood is not just notation — it is a mathematical statement that every observation is independent. Violating this assumption does not produce a slightly wrong answer; it breaks the foundation the likelihood was built on.
+
+---
+
+## Stage 20 — Assumption 4: No Multicollinearity
+
+This assumption carries over from Linear Regression completely unchanged, because the problem lives in the predictor matrix $X$, not in the output $y$.
+
+At the heart of the MLE optimization is the computation of coefficient variances, which requires inverting the matrix $(X^T W X)$. When two predictors are highly correlated — say, tumor weight in grams and tumor weight in ounces — the columns of $X$ become nearly linearly dependent, and the inversion becomes numerically unstable.
+
+The consequences cascade:
+
+* The standard errors of $\beta$ coefficients skyrocket.
+* Coefficients become wildly unstable — a small change in the data can flip a $\beta$ from $+10$ to $-10$.
+* $p$-values explode, making it impossible to determine which predictors are genuinely driving the prediction.
+
+### Sixth Conclusion
+
+> Multicollinearity is an $X$-problem. It does not care whether your output is continuous or binary. As long as your model computes $(X^T W X)^{-1}$, collinear features will break the math in exactly the same way they did in Linear Regression.
+
+---
+
+## Stage 21 — Assumption 5: Gaussian Errors? They Disappear.
+
+In Linear Regression, we explicitly assumed $\epsilon \sim \mathcal{N}(0, \sigma^2)$. This was necessary to make $t$-tests and confidence intervals exact for small sample sizes.
+
+In Logistic Regression, this assumption **does not exist**.
+
+Once we chose $y_i \sim \text{Bernoulli}(p_i)$, the residual for any data point is:
+
+$$\text{residual}_i = y_i - p_i$$
+
+Because $y_i$ can only ever be exactly $0$ or exactly $1$, the residuals can only ever land on two discrete values:
+
+* If $y_i = 1$: the residual is $(1 - p_i)$
+* If $y_i = 0$: the residual is $(-p_i)$
+
+It is physically impossible for two discrete values to form a continuous, bell-shaped Gaussian curve.
+
+### Seventh Conclusion
+
+> We do not need to check for normally distributed residuals in Logistic Regression. MLE trades small-sample exactness for large-sample asymptotic normality — as $n$ grows, the Central Limit Theorem guarantees that the $\hat{\beta}$ estimates themselves become approximately normal, regardless of the binary shape of $y$.
+
+---
+
+## Assumptions Cheat Sheet
+
+| # | Assumption | Status vs. Linear Regression |
+|---|---|---|
+| 1 | $y \mid x \sim \text{Bernoulli}(p(x))$ — variance is $p(1-p)$ | **Replaces** Homoscedasticity |
+| 2 | Log-odds are linear in $x$ | **New** — replaces linearity in $y$ |
+| 3 | Observations are independent (conditional on $x$) | **Carried over** — shifts from errors to outcomes |
+| 4 | No multicollinearity among predictors | **Carried over** unchanged |
+| 5 | Gaussian errors | **Dropped entirely** |
