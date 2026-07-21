@@ -28,7 +28,7 @@ Stage 7 → Extensions
            class imbalance handling)
 ```
 
-Status: **Stage 3 complete → Stage 4 in progress**
+Status: **Stage 4 complete → Stage 5 next**
 
 ---
 
@@ -79,6 +79,21 @@ This is **Binary Cross-Entropy (log loss)**. For the worked example: $L = 0.3879
 ---
 
 ## Stage 4: Optimization — Gradient of BCE, Gradient Descent
+
+**Chain rule:** $L$ depends on $p_i$ depends on $z_i$ depends on $\beta_j$. Built the gradient piece by piece:
+
+- Sigmoid derivative (derived via chain rule + partial fractions): $\sigma'(z) = \sigma(z)(1-\sigma(z))$ — reused constantly (neural nets etc.).
+- $\frac{\partial L_i}{\partial p_i} = -\frac{y_i}{p_i}+\frac{1-y_i}{1-p_i} = \frac{p_i-y_i}{p_i(1-p_i)}$.
+- Chain: $\frac{\partial L_i}{\partial z_i} = \frac{\partial L_i}{\partial p_i}\cdot\sigma'(z_i) = \frac{p_i-y_i}{p_i(1-p_i)}\cdot p_i(1-p_i) = p_i - y_i$ — the messy denominator cancels perfectly, leaving the **residual**.
+- $\frac{\partial z_i}{\partial\beta_0}=1$, $\frac{\partial z_i}{\partial\beta_1}=x_i$.
+- **Full gradient:**
+$$\frac{\partial L}{\partial \beta_0} = \frac{1}{n}\sum_{i=1}^n(p_i-y_i), \qquad \frac{\partial L}{\partial \beta_1} = \frac{1}{n}\sum_{i=1}^n(p_i-y_i)x_i$$
+- GD update: $\beta_j \leftarrow \beta_j - \eta\frac{\partial L}{\partial\beta_j}$ — same update structure as Linear Regression.
+- **Cross-track insight:** MSE's gradient (Linear Regression) has the identical functional form $(\hat y_i-y_i)$, $(\hat y_i-y_i)x_i$. Not coincidence — both are instances of **Generalized Linear Models**: pairing an exponential-family distribution with its **canonical link function** (Gaussian↔identity, Bernoulli↔logit) always makes $\frac{\partial L}{\partial z}$ reduce to (prediction − actual). The logit was chosen in Stage 2 purely to fix the unbounded-domain problem, but it also happens to be the canonical link — which is *why* the cancellation in Stage 4 wasn't luck.
+
+---
+
+## Stage 5: Assumptions of Logistic Regression
 
 *(notes to be filled in as we work through it)*
 
